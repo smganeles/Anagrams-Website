@@ -10,26 +10,53 @@
   </head>
 
   <body>
+    <div class=row id="big">
+      <div class="col mx-3" id="game">
+        <div class = "row" id="top-row">
+        </div>
 
-    <div class = "row" id="top-row">
-    </div>
+        <div class = "row" id="center-row">
+          <div class = "col-6 bg-primary ml-3 my-3" id="letter-bank" onclick="new_word()">
+          </div>
 
-    <div class = "row" id="center-row">
-      <div class = "col-6 bg-primary ml-3 my-3" id="letter-bank" onclick="new_word()">
+        </div>
+
+        <div class = "row" id="bottom-row">
+        </div>
+
+        <div class = "row p-3 justify-content-center"> 
+          <div class = "col-6">
+            <div class="input-group">
+              <input type="text" class="form-control" placeholder="Word" id="submission">
+              <div class="input-group-append">
+                <button class="btn btn-outline-primary" type="button" id="submit">Submit</button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class = "col bg-secondary mr-3 ml-1 my-3" id="log">
-      </div>
-    </div>
 
-    <div class = "row" id="bottom-row">
-    </div>
-
-    <div class = "row p-3 justify-content-center"> 
-      <div class = "col-6">
-        <div class="input-group">
-          <input type="text" class="form-control" placeholder="Word" id="submission">
-          <div class="input-group-append">
-            <button class="btn btn-outline-primary" type="button" id="submit">Submit</button>
+      <div class="col m-1" id="sidebar">
+        <div class = "col bg-secondary mb-1" id="log">
+          <h5 style="color:white">Log:</h5>
+          <div class = "col p-0" id="logbox">
+          </div>
+        </div>
+        <div class="col mb-1 bg-danger" id="approval">
+          <button class="btn btn-outline-light" id="approve">Approve</button>
+          <button class="btn btn-outline-light" id="disapprove">Disapprove</button>
+        </div>
+        <div class="col pt-2" id="chat">
+          <h5>Chat:</h5>
+          <div class="col p-0" id="chatbox">
+          </div>
+          <div class="row py-3">
+            <div class="input-group">
+              <input type="text" class="form-control" placeholder="Message" id="chat_msg">
+              <div class="input-group-append">
+                <button class="btn btn-outline-primary" type="button" id="chat_sbmt">Submit</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>

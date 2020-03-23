@@ -28,7 +28,12 @@ function Stealing(word) {
 
 $(document).ready(function() {
 
+	// doc_height = $(document).height();
+	// $("#chat").height(doc_height-10);
+
 	socket.emit('new player');
+
+	$("#approval").hide();
 
 	$("#submit").click(function(){ //submit a word
 		var word = $("#submission").val();
@@ -41,8 +46,9 @@ $(document).ready(function() {
 				"new_word":word,
 				"steal_word":steal_word,
 				"player_from":player_from,
-				"player_to":id}
+				"player_to":id};
 			socket.emit('steal',package);
+			socket.emit('hey');
 		}
 		stealing=false;
 		active=null;
@@ -56,6 +62,27 @@ $(document).ready(function() {
 		    event.preventDefault();
 		    $("#submit").click();
 		}
+	});
+
+	$("#chat_sbmt").click(function(){
+		var msg = $("#chat_msg").val();
+		socket.emit('chat_upld',msg);
+		$("#chat_msg").val("");
+	});
+
+	$("#chat_msg").on("keyup", function(event) { //submit word when press enter
+  		if (event.keyCode === 13) { 
+		    event.preventDefault();
+		    $("#chat_sbmt").click();
+		}
+	});
+
+	$("#approve").click(function(){
+		socket.emit('approve',id);
+	});
+
+	$("#disapprove").click(function(){
+		socket.emit('disapprove',id);
 	});
 
 
@@ -95,22 +122,44 @@ $(document).ready(function() {
 			$("#"+active).css("border-radius","4px");
 		}
 		//fix the height of the log
-		var log = $("#log");
-		var msgs = log.html();
-		log.html("");
-		var height=$("#letter-bank").innerHeight();
-		$("#log").css("max-height",height);
-		$("#log").html(msgs);
+		// var log = $("#log");
+		// var msgs = log.html();
+		// log.html("");
+		// var height=$("#letter-bank").innerHeight();
+		// $("#log").css("max-height",height);
+		// $("#log").html(msgs);
 	});
 
 	socket.on('msg',function(msg) {
-		$("#log").append(
+		$("#logbox").append(
 			"<p class='msg'>" + msg + "</p>");
+		$('#logbox').scrollTop($('#logbox')[0].scrollHeight);
 	});
 
 	socket.on('alert',function(alert) {
-		$("#log").append(
+		$("#logbox").append(
 			"<p class='msg alrt'>" + alert + "</p>");
+		$('#logbox').scrollTop($('#logbox')[0].scrollHeight);
+	});
+
+	socket.on('chat',function(msg) {
+		$("#chatbox").append(
+			"<p class='chat'>" + msg + "</p>");
+		$('#chatbox').scrollTop($('#chatbox')[0].scrollHeight);
+	});
+
+	socket.on('approval',function(msg){
+		$("#logbox").append(
+			"<p class='msg'>" + msg + "</p>");
+		$('#logbox').scrollTop($('#logbox')[0].scrollHeight);
+		$("#approval").show(1000);
+	});
+
+	socket.on('verdict',function(msg){
+		$("#logbox").append(
+			"<p class='msg'>" + msg + "</p>");
+		$('#logbox').scrollTop($('#logbox')[0].scrollHeight);
+		$("#approval").hide(1000);
 	});
 
 
