@@ -60,7 +60,7 @@ let letters_rem = [
   "Z","Z"]
 
 
-var flip_timer = 1000;
+var flip_timer = 8000;
 var state = {
   letter_bank: [],
   players: {},
