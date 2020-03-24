@@ -189,7 +189,7 @@ io.on('connection', function(socket) {
       var p_to = data["player_to"];
       io.sockets.emit('approval',{
         "p_to": p_to,
-        "msg": p_from +" wants to steal "+word+" from "+old_word+" ("+p_to+")"
+        "msg": p_to +" wants to steal "+word+" from "+old_word+" ("+p_from+")"
       });
       var timer_list = [];
       for (i=0;i<61;i++){
@@ -222,7 +222,7 @@ io.on('connection', function(socket) {
               state["players"][p_to].push(word);
               const index = state["players"][p_from].indexOf(old_word);
               state["players"][p_from].splice(index,1);
-              io.sockets.emit('verdict',p_from+" steals "+word+" from "+old_word+" ("+p_to+")");
+              io.sockets.emit('verdict',p_to+" steals "+word+" from "+old_word+" ("+p_from+")");
               end_steal();
             }
             else if (all_disapprove == true){
