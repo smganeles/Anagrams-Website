@@ -208,7 +208,7 @@ io.on('connection', function(socket) {
                   all_approve = false;
                 }
                 else if (approval[player]==true){
-                  disapprv += " " + player;
+                  apprv += " " + player;
                   all_disapprove = false;
                 }
               }
