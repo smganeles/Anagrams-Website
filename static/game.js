@@ -1,6 +1,6 @@
 var socket = io();
 
-var id="Simon";
+var id="";
 
 var active;
 var stealing=false;
@@ -28,12 +28,25 @@ function Stealing(word) {
 
 $(document).ready(function() {
 
-	// doc_height = $(document).height();
-	// $("#chat").height(doc_height-10);
-
-	socket.emit('new player');
-
 	$("#approval").hide();
+
+	$("#player_join").click(function(){
+		var name = $("#nameInput").val().trim();
+		if (!document.getElementById(name)) {
+			socket.emit('new player',name);
+			id = name;
+		} else {
+			id = name;
+		}
+		$("#login_back").hide();
+	});
+
+	$("#nameInput").on("keyup", function(event) { //submit word when press enter
+  		if (event.keyCode === 13) { 
+		    event.preventDefault();
+		    $("#player_join").click();
+		}
+	});
 
 	$("#submit").click(function(){ //submit a word
 		var word = $("#submission").val();
@@ -65,7 +78,7 @@ $(document).ready(function() {
 	});
 
 	$("#chat_sbmt").click(function(){
-		var msg = $("#chat_msg").val();
+		var msg = id + ": " + $("#chat_msg").val();
 		socket.emit('chat_upld',msg);
 		$("#chat_msg").val("");
 	});

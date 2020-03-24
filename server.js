@@ -3,6 +3,7 @@ var http = require('http');
 var path = require('path');
 var socketIO = require('socket.io');
 
+
 var app = express();
 var server = http.Server(app);
 var io = socketIO(server);
@@ -13,15 +14,17 @@ server.listen(5000, function() {
   console.log('Starting server on port 5000');
 });
 
+
 ///////////////////////////////////////////
 
 app.get('/', function(request,response){
-	response.sendFile(path.join(__dirname, 'pages/login.html'));
+	response.sendFile(path.join(__dirname, 'pages/index.html'));
 }); 
 
-app.get('/game', function(req,res){
-  res.sendFile(path.join(__dirname, 'pages/index.html'))
-});
+// app.post('/game', function(req,res){
+//   var name = req.body.name;
+//   res.sendFile(path.join(__dirname, 'pages/index.html'))
+// });
 
 
 //////////////////////////////////////////
@@ -31,6 +34,7 @@ app.get('/game', function(req,res){
 //   J: 2, K: 2, L: 5, M: 3, N: 8, O: 11, P: 4, Q: 2, R: 9,
 //   S: 6, T: 9, U: 6, V: 3, W: 3, X: 2, Y: 3, Z: 2
 // }
+
 let letters_rem = [
   "A","A","A","A","A","A","A","A","A","A","A","A","A",
   "B","B","B",
@@ -59,26 +63,19 @@ let letters_rem = [
   "Y","Y","Y",
   "Z","Z"]
 
+
 var flip_timer = 10000;
 
-// var state = {
-//   letter_bank: [],
-//   players: {},
-//   animations: []
-// };
 
 var state = {
   letter_bank: [],
   players: {
-    Simon: ["QUA","HOLA","HELLO"],
-    Elan: ["ACUTE", "WHELP"],
-    Gabi: ["MILK","EGGS", "CEREAL"],
-    Fourth: ["PURPLE","KNIFE","KNIGHT","REDEWIFENER"]
+    Simon: ["QUA","HELLO"],
+    Elan: ["ACUTE"],
+    Gabi: ["MILK","CEREAL"],
+    Fourth: ["REDEWIFENER"]
   },
 };
-
-var id_to_players = {
-}
 
 var approval = {
   Simon: null,
@@ -96,24 +93,30 @@ var active_players = {
 
 var busy = false;
 
+var letter_flip;
 
-setInterval(function() {  //letter flipping
-  var num_remain = letters_rem.length;
-  if (num_remain > 0) {
-    var rand_idx = Math.floor(Math.random()*num_remain);
-    var letter = letters_rem[rand_idx];
-    letters_rem.splice(rand_idx,1);
-    state["letter_bank"].push(letter);
-    refresh();
-  }
-}, flip_timer);
-
+// var letter_flip = setInterval(function() {  //letter flipping
+//   var num_remain = letters_rem.length;
+//   if (num_remain > 0) {
+//     var rand_idx = Math.floor(Math.random()*num_remain);
+//     var letter = letters_rem[rand_idx];
+//     letters_rem.splice(rand_idx,1);
+//     state["letter_bank"].push(letter);
+//     refresh();
+//   }
+// }, flip_timer);
 
 
 io.on('connection', function(socket) {
   socket.on('new player', function(name) {
     // state[players][socket.id] = [];
-    state["players"][name] = [];
+    if (state["players"]=={}) {
+      play_flip();
+    }
+    if (!state["players"].hasOwnProperty(name)) { //always true, cause will only send new_player if really new
+      state["players"][name] = [];
+    }
+    active_players[name] = true;
     refresh();
   });
 
@@ -122,12 +125,13 @@ io.on('connection', function(socket) {
   });
 
   socket.on('word_submit', function(data) {
+    console.log(state);
     var valid = true;
+
     if (busy) {
       socket.emit('alert',busy + " in process");
       valid = false;
     }
-
     var word = data["word"].toUpperCase();
     if (valid==true) {
       if (word.length<3) {
@@ -217,12 +221,16 @@ io.on('connection', function(socket) {
           timer_list.push(setTimeout(function(){ 
             var all_approve = true;
             var all_disapprove = true;
+            var apprv = "";
+            var disapprv = "";
             for (player in approval) {
               if (player != p_to && active_players[player]==true) {
-                if (approval[player] === false){
+                if (approval[player] == false){
+                  disapprv += " " + player;
                   all_approve = false;
                 }
                 else if (approval[player]==true){
+                  disapprv += " " + player;
                   all_disapprove = false;
                 }
               }
@@ -237,6 +245,7 @@ io.on('connection', function(socket) {
               io.sockets.emit('verdict',p_from+" steals "+word+" from "+p_to);
               refresh();
               busy = false;
+              null_approval();
             }
             else if (all_disapprove == true){
               for (timer of timer_list) {
@@ -244,6 +253,15 @@ io.on('connection', function(socket) {
               }
               io.sockets.emit('verdict',"all active players disapproved");
               busy = false;
+              null_approval();
+            }
+            else if (i>1 && i%5==0 && i<26) {
+              var waiting = "Waiting for Unanimous Decision</p> <p class='msg'>&ensp; Approves:"+apprv+"</p><p class='msg'>&ensp;"+disapprv;
+              io.sockets.emit('msg',waiting);
+            }
+            else if (i==30) {
+              io.sockets.emit('msg',"Took too long, moving on")
+              null_approval();
             }
           }, 1000*i));
         })(i);
@@ -265,4 +283,27 @@ io.on('connection', function(socket) {
 
 function refresh() {
   io.sockets.emit('state', state);
+}
+
+function null_approval() {
+  for (palyer in approval) {
+    approval[player] = null;
+  }
+}
+
+function pause_flip() {
+  clearInterval(letter_flip);
+}
+
+function play_flip() {
+  letter_flip = setInterval(function() {  //letter flipping
+    var num_remain = letters_rem.length;
+    if (num_remain > 0) {
+      var rand_idx = Math.floor(Math.random()*num_remain);
+      var letter = letters_rem[rand_idx];
+      letters_rem.splice(rand_idx,1);
+      state["letter_bank"].push(letter);
+      refresh();
+    }
+  }, flip_timer);
 }

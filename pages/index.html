@@ -5,11 +5,26 @@
     <link
       rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
     <link rel ="stylesheet" type = "text/css" href = "../static/style.css">
+    <link rel ="stylesheet" type = "text/css" href = "../static/login_style.css">
     <script src="/socket.io/socket.io.js"></script>
 
   </head>
 
   <body>
+
+    <div id="login_back">
+      <div class = "row justify-content-center">
+        <div class="col" id="login">
+          <h1>Anagrams Login</h1>
+          <div class="form-group">
+            <label for="nameInput">Name</label>
+            <input type="text" class="form-control" id="nameInput" aria-describedby="emailHelp" placeholder="Enter Name" name="name">
+          </div>
+          <button type="button" class="btn btn-primary" id="player_join">Submit</button>
+        </div>
+      </div>
+    </div>
+
     <div class=row id="big">
       <div class="col mx-3" id="game">
         <div class = "row" id="top-row">
@@ -49,6 +64,7 @@
         <div class="col pt-2" id="chat">
           <h5>Chat:</h5>
           <div class="col p-0" id="chatbox">
+<!--             <p>&ensp; &ensp; HELLLO</p>  -->
           </div>
           <div class="row py-3">
             <div class="input-group">
