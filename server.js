@@ -139,6 +139,7 @@ io.on('connection', function(socket) {
     var valid = true;
     var word = data["new_word"].toUpperCase();
     var old_word = data["steal_word"].toUpperCase();
+    var word_c = word.split('');
     if (busy) {
       socket.emit('alert',busy + " in process");
       valid = false;
@@ -151,7 +152,6 @@ io.on('connection', function(socket) {
       }
     }
     if (valid==true) { //check that all old letters are used
-      var word_c = word.split('');
       for (letter of old_word) { //take out all the letters in the old word
         if (word_c.includes(letter)) {
           const index = word_c.indexOf(letter);
@@ -169,6 +169,7 @@ io.on('connection', function(socket) {
         valid = false;
       }  
     }
+    extra_letters = word_c.slice();
     if (valid==true) { //check if all added letters are in the bank
       var letters = state["letter_bank"].slice();
       for (letter of word_c) {
@@ -218,6 +219,10 @@ io.on('connection', function(socket) {
             if (all_approve == true){
               for (timer of timer_list) {
                 clearTimeout(timer);
+              }
+              for (letter of word) {
+                const index = state["letter_bank"].indexOf(letter);
+                state["letter_bank"].splice(index,1);
               }
               state["players"][p_to].push(word);
               const index = state["players"][p_from].indexOf(old_word);
