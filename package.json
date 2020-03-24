@@ -1,5 +1,5 @@
 {
-  "name": "anagrams-website",
+  "name": "play-anagrams",
   "version": "1.0.0",
   "description": "",
   "main": "app.js",
@@ -14,14 +14,18 @@
   },
   "devDependencies": {},
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/smganeles/Anagrams-Website.git"
   },
-  "author": "",
+  "author": "Simon Ganeles",
   "license": "ISC",
+  "engines": {
+    "node": "12.16.1"
+  },
   "bugs": {
     "url": "https://github.com/smganeles/Anagrams-Website/issues"
   },
