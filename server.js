@@ -74,6 +74,7 @@ var letters_copy = letters_rem.slice();
 
 io.on('connection', function(socket) {
   socket.on('new_player', function(name) {
+    // console.log("hi".toUpperCase()=="HI".toUpperCase()); //true
     // console.log(active_players);
     // console.log(state);
     if (isEmpty(state["players"])) {
@@ -332,7 +333,7 @@ function dict_promise2(word) {
       .end(function(res){
         // console.log("2done");
         // console.log(res.body.length);
-        if (res.body.length==1) { //word found in dictionary
+        if (res.body.length==1) { //word found in dictionary with only 1 definition
           resolve();
         } else {
           reject();
@@ -340,6 +341,10 @@ function dict_promise2(word) {
       });
   });
 }
+
+//TODO:
+//proper word patch:
+//only use Merriam webster, check if any definition not capital
 
 async function is_word(word) {
   try {
