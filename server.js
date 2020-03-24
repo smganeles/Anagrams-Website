@@ -23,6 +23,11 @@ app.get('/', function(request,response){
 	response.sendFile(path.join(__dirname, 'pages/index.html'));
 }); 
 
+app.get('/restart', function(req,res){
+  end_game();
+  res.redirect('/');
+});
+
 //////////////////////////////////////////
 
 // let letters_rem = {
