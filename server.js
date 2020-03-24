@@ -169,7 +169,7 @@ io.on('connection', function(socket) {
         valid = false;
       }  
     }
-    extra_letters = word_c.slice();
+    var extra_letters = word_c.slice();
     if (valid==true) { //check if all added letters are in the bank
       var letters = state["letter_bank"].slice();
       for (letter of word_c) {
@@ -220,7 +220,7 @@ io.on('connection', function(socket) {
               for (timer of timer_list) {
                 clearTimeout(timer);
               }
-              for (letter of word) {
+              for (letter of extra_letters) {
                 const index = state["letter_bank"].indexOf(letter);
                 state["letter_bank"].splice(index,1);
               }
