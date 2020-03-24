@@ -66,30 +66,16 @@ let letters_rem = [
 
 var flip_timer = 10000;
 
-
 var state = {
   letter_bank: [],
-  players: {
-    Simon: ["QUA","HELLO"],
-    Elan: ["ACUTE"],
-    Gabi: ["MILK","CEREAL"],
-    Fourth: ["REDEWIFENER"]
-  },
+  players: {},
 };
 
-var approval = {
-  Simon: null,
-  Elan: null,
-  Gabi: null,
-  Fourth: null
-}
+var approval = {};
 
-var active_players = {
-  Simon: true,
-  Elan: true,
-  Gabi: true,
-  Fourth: true
-};
+var active_players = {};
+
+var id_to_player = {};
 
 var busy = false;
 
@@ -108,15 +94,18 @@ var letter_flip;
 
 
 io.on('connection', function(socket) {
-  socket.on('new player', function(name) {
-    // state[players][socket.id] = [];
-    if (state["players"]=={}) {
+  socket.on('new_player', function(name) {
+    // console.log(active_players);
+    // console.log(state);
+    if (isEmpty(state["players"])) {
       play_flip();
     }
     if (!state["players"].hasOwnProperty(name)) { //always true, cause will only send new_player if really new
       state["players"][name] = [];
     }
     active_players[name] = true;
+    approval[name] = null;
+    id_to_player[socket.id]=name;
     refresh();
   });
 
@@ -125,7 +114,6 @@ io.on('connection', function(socket) {
   });
 
   socket.on('word_submit', function(data) {
-    console.log(state);
     var valid = true;
 
     if (busy) {
@@ -171,7 +159,6 @@ io.on('connection', function(socket) {
       socket.emit('alert',busy + " in process");
       valid = false;
     }
-    busy = "stealing";
     var word = data["new_word"].toUpperCase();
     var old_word = data["steal_word"].toUpperCase();
 
@@ -211,13 +198,18 @@ io.on('connection', function(socket) {
       }
     }
     if (valid==true) {
+      busy = "stealing";
+      pause_flip();
       var p_from = data["player_from"];
       var p_to = data["player_to"];
-      io.sockets.emit('approval',p_from +" wants to steal "+word+" from "+p_to);
+      io.sockets.emit('approval',{
+        "p_to": p_to,
+        "msg": p_from +" wants to steal "+word+" from "+p_to
+      });
       //pause the flip timer
-      for (i=0;i<30;i++){
+      var timer_list = [];
+      for (i=0;i<61;i++){
         (function(i) {
-          var timer_list = []
           timer_list.push(setTimeout(function(){ 
             var all_approve = true;
             var all_disapprove = true;
@@ -225,7 +217,11 @@ io.on('connection', function(socket) {
             var disapprv = "";
             for (player in approval) {
               if (player != p_to && active_players[player]==true) {
-                if (approval[player] == false){
+                if (approval[player] == null){
+                  all_approve = false;
+                  all_disapprove = false;
+                }
+                else if (approval[player] == false){
                   disapprv += " " + player;
                   all_approve = false;
                 }
@@ -246,6 +242,7 @@ io.on('connection', function(socket) {
               refresh();
               busy = false;
               null_approval();
+              play_flip();
             }
             else if (all_disapprove == true){
               for (timer of timer_list) {
@@ -254,16 +251,18 @@ io.on('connection', function(socket) {
               io.sockets.emit('verdict',"all active players disapproved");
               busy = false;
               null_approval();
+              play_flip();
             }
-            else if (i>1 && i%5==0 && i<26) {
-              var waiting = "Waiting for Unanimous Decision</p> <p class='msg'>&ensp; Approves:"+apprv+"</p><p class='msg'>&ensp;"+disapprv;
+            else if (i==5 || (i>1 && i%10==0 && i<60)) {
+              var waiting = "Waiting for Unanimous Decision</p> <p class='msg'>&ensp; Approves:"+apprv+"</p><p class='msg'>&ensp; Disapproves:"+disapprv;
               io.sockets.emit('msg',waiting);
             }
-            else if (i==30) {
-              io.sockets.emit('msg',"Took too long, moving on")
+            else if (i==60) {
+              io.sockets.emit('verdict',"Took too long, moving on")
               null_approval();
+              play_flip();
             }
-          }, 1000*i));
+          }, 1500*i));
         })(i);
       }
     }
@@ -278,6 +277,11 @@ io.on('connection', function(socket) {
     io.sockets.emit('msg',player+" disapproves");
   });
 
+  socket.on('disconnect', function(){
+    active_players[id_to_player[socket.id]] = false;
+    delete id_to_player[socket.id];
+  })
+
 });
 
 
@@ -286,7 +290,7 @@ function refresh() {
 }
 
 function null_approval() {
-  for (palyer in approval) {
+  for (player in approval) {
     approval[player] = null;
   }
 }
@@ -306,4 +310,12 @@ function play_flip() {
       refresh();
     }
   }, flip_timer);
+}
+
+function isEmpty(obj) {
+    for(var key in obj) {
+        if(obj.hasOwnProperty(key))
+            return false;
+    }
+    return true;
 }

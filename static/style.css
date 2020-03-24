@@ -159,7 +159,8 @@ body {
 	outline:0;
 }
 
-#bottom-row .letter, #letter-bank .letter {
+/*#bottom-row .letter,*/ 
+#letter-bank .letter {
 	border-radius: 10px;
 	width: 40px;
 	height: 40px;

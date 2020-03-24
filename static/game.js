@@ -32,12 +32,14 @@ $(document).ready(function() {
 
 	$("#player_join").click(function(){
 		var name = $("#nameInput").val().trim();
-		if (!document.getElementById(name)) {
-			socket.emit('new player',name);
-			id = name;
-		} else {
-			id = name;
-		}
+		// if (!document.getElementById(name)) {
+		// 	socket.emit('new_player',name);
+		// 	id = name;
+		// } else {
+		// 	id = name;
+		// }
+		socket.emit('new_player',name);
+		id = name;
 		$("#login_back").hide();
 	});
 
@@ -161,11 +163,13 @@ $(document).ready(function() {
 		$('#chatbox').scrollTop($('#chatbox')[0].scrollHeight);
 	});
 
-	socket.on('approval',function(msg){
+	socket.on('approval',function(data){
 		$("#logbox").append(
-			"<p class='msg'>" + msg + "</p>");
+			"<p class='msg'>" + data["msg"] + "</p>");
 		$('#logbox').scrollTop($('#logbox')[0].scrollHeight);
-		$("#approval").show(1000);
+		if (data["p_to"]!=id){
+			$("#approval").show(1000);			
+		}
 	});
 
 	socket.on('verdict',function(msg){
