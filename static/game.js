@@ -1,7 +1,5 @@
 var socket = io();
-
 var id="";
-
 var active;
 var stealing=false;
 var player_from;
@@ -32,12 +30,6 @@ $(document).ready(function() {
 
 	$("#player_join").click(function(){
 		var name = $("#nameInput").val().trim();
-		// if (!document.getElementById(name)) {
-		// 	socket.emit('new_player',name);
-		// 	id = name;
-		// } else {
-		// 	id = name;
-		// }
 		socket.emit('new_player',name);
 		id = name;
 		$("#login_back").hide();

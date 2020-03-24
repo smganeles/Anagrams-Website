@@ -2,7 +2,7 @@ var express = require('express');
 var http = require('http');
 var path = require('path');
 var socketIO = require('socket.io');
-
+var unirest = require('unirest');
 
 var app = express();
 var server = http.Server(app);
@@ -20,12 +20,6 @@ server.listen(5000, function() {
 app.get('/', function(request,response){
 	response.sendFile(path.join(__dirname, 'pages/index.html'));
 }); 
-
-// app.post('/game', function(req,res){
-//   var name = req.body.name;
-//   res.sendFile(path.join(__dirname, 'pages/index.html'))
-// });
-
 
 //////////////////////////////////////////
 
@@ -65,33 +59,15 @@ let letters_rem = [
 
 
 var flip_timer = 10000;
-
 var state = {
   letter_bank: [],
   players: {},
 };
-
 var approval = {};
-
 var active_players = {};
-
 var id_to_player = {};
-
 var busy = false;
-
 var letter_flip;
-
-// var letter_flip = setInterval(function() {  //letter flipping
-//   var num_remain = letters_rem.length;
-//   if (num_remain > 0) {
-//     var rand_idx = Math.floor(Math.random()*num_remain);
-//     var letter = letters_rem[rand_idx];
-//     letters_rem.splice(rand_idx,1);
-//     state["letter_bank"].push(letter);
-//     refresh();
-//   }
-// }, flip_timer);
-
 
 io.on('connection', function(socket) {
   socket.on('new_player', function(name) {
@@ -113,24 +89,26 @@ io.on('connection', function(socket) {
     io.sockets.emit('chat',msg);
   });
 
-  socket.on('word_submit', function(data) {
+  socket.on('word_submit', async function(data) {
     var valid = true;
-
+    var word = data["word"].toUpperCase();
     if (busy) {
       socket.emit('alert',busy + " in process");
       valid = false;
     }
-    var word = data["word"].toUpperCase();
     if (valid==true) {
       if (word.length<3) {
         socket.emit('alert',"word must be 3 letters or longer");
         valid = false;
       }
     }
-
-    //TODO
-    //check if word in dictionary
-
+    if (valid==true) {  //dictionary check
+      x = await is_word(word);
+      if (!x) {
+        socket.emit('alert',"not a valid word");
+        valid = false;
+      }
+    }
     if (valid==true) { //check if all letters in the letter bank
       var letters = state["letter_bank"].slice();
       for (letter of word) {
@@ -138,7 +116,7 @@ io.on('connection', function(socket) {
           const index = letters.indexOf(letter);
           letters.splice(index,1);
         } else {
-          socket.emit('alert',"not enough letters in bank");
+          socket.emit('alert',"those letters not in the bank");
           valid = false;
           break;
         }
@@ -153,18 +131,21 @@ io.on('connection', function(socket) {
     refresh();
   });
 
-  socket.on('steal', function(data) {
+  socket.on('steal', async function(data) {
     var valid = true;
+    var word = data["new_word"].toUpperCase();
+    var old_word = data["steal_word"].toUpperCase();
     if (busy) {
       socket.emit('alert',busy + " in process");
       valid = false;
     }
-    var word = data["new_word"].toUpperCase();
-    var old_word = data["steal_word"].toUpperCase();
-
-    //TODO
-    //check if word in dictionary
-
+    if (valid==true) {  //dictionary check
+      x = await is_word(word);
+      if (!x) {
+        socket.emit('alert',"not a valid word");
+        valid = false;
+      }
+    }
     if (valid==true) { //check that all old letters are used
       var word_c = word.split('');
       for (letter of old_word) { //take out all the letters in the old word
@@ -204,9 +185,8 @@ io.on('connection', function(socket) {
       var p_to = data["player_to"];
       io.sockets.emit('approval',{
         "p_to": p_to,
-        "msg": p_from +" wants to steal "+word+" from "+p_to
+        "msg": p_from +" wants to steal "+word+" from "+old_word+" ("+p_to+")"
       });
-      //pause the flip timer
       var timer_list = [];
       for (i=0;i<61;i++){
         (function(i) {
@@ -238,20 +218,15 @@ io.on('connection', function(socket) {
               state["players"][p_to].push(word);
               const index = state["players"][p_from].indexOf(old_word);
               state["players"][p_from].splice(index,1);
-              io.sockets.emit('verdict',p_from+" steals "+word+" from "+p_to);
-              refresh();
-              busy = false;
-              null_approval();
-              play_flip();
+              io.sockets.emit('verdict',p_from+" steals "+word+" from "+old_word+" ("+p_to+")");
+              end_steal();
             }
             else if (all_disapprove == true){
               for (timer of timer_list) {
                 clearTimeout(timer);
               }
               io.sockets.emit('verdict',"all active players disapproved");
-              busy = false;
-              null_approval();
-              play_flip();
+              end_steal();
             }
             else if (i==5 || (i>1 && i%10==0 && i<60)) {
               var waiting = "Waiting for Unanimous Decision</p> <p class='msg'>&ensp; Approves:"+apprv+"</p><p class='msg'>&ensp; Disapproves:"+disapprv;
@@ -259,9 +234,7 @@ io.on('connection', function(socket) {
             }
             else if (i==60) {
               io.sockets.emit('verdict',"Took too long, moving on")
-              null_approval();
-              play_flip();
-            }
+              end_steal();            }
           }, 1500*i));
         })(i);
       }
@@ -299,6 +272,13 @@ function pause_flip() {
   clearInterval(letter_flip);
 }
 
+function end_steal() {
+  busy = false;
+  null_approval();
+  play_flip();
+  refresh();
+}
+
 function play_flip() {
   letter_flip = setInterval(function() {  //letter flipping
     var num_remain = letters_rem.length;
@@ -318,4 +298,28 @@ function isEmpty(obj) {
             return false;
     }
     return true;
+}
+
+function dict_promise(word) {
+  return new Promise (function(resolve, reject) {
+    unirest.get("https://wordsapiv1.p.rapidapi.com/words/"+word)
+      .header("x-rapidapi-host", "wordsapiv1.p.rapidapi.com")
+      .header("x-rapidapi-key", "43be23b308msh403ea08483525a4p105ed7jsn35918a82996e")
+      .end(function(res){
+        if (res.notFound) {
+          reject ('404');
+        } else {
+          resolve (res.body)
+        }
+      });
+  });
+}
+
+async function is_word(word) {
+  try {
+    await dict_promise(word);
+    return true;
+  } catch (error) {
+    return false;
+  }
 }
