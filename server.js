@@ -60,7 +60,7 @@ let letters_rem = [
   "Z","Z"]
 
 
-var flip_timer = 10000;
+var flip_timer = 1000;
 var state = {
   letter_bank: [],
   players: {},
@@ -256,6 +256,8 @@ io.on('connection', function(socket) {
   socket.on('disconnect', function(){
     active_players[id_to_player[socket.id]] = false;
     delete id_to_player[socket.id];
+    // console.log(active_players);
+    // console.log(id_to_player);
     if (isEmpty(id_to_player)) {
       end_game();
     }
@@ -307,16 +309,33 @@ function isEmpty(obj) {
   return true;
 }
 
-function dict_promise(word) {
+function dict_promise1(word) {
   return new Promise (function(resolve, reject) {
+    wordsapi = false;
     unirest.get("https://wordsapiv1.p.rapidapi.com/words/"+word)
       .header("x-rapidapi-host", "wordsapiv1.p.rapidapi.com")
       .header("x-rapidapi-key", "43be23b308msh403ea08483525a4p105ed7jsn35918a82996e")
       .end(function(res){
-        if (res.notFound) {
-          reject ('404');
+        // console.log("1done");
+        if (!res.notFound) { //no 404 error
+          resolve();
         } else {
-          resolve (res.body)
+          reject();
+        }
+      });
+  });
+}
+
+function dict_promise2(word) {
+  return new Promise (function(resolve,reject) {
+    unirest.get('https://www.dictionaryapi.com/api/v3/references/collegiate/json/'+word+'?key=79ffc137-e40a-4e53-899e-b0e16fb1441b')
+      .end(function(res){
+        // console.log("2done");
+        // console.log(res.body.length);
+        if (res.body.length==1) { //word found in dictionary
+          resolve();
+        } else {
+          reject();
         }
       });
   });
@@ -324,10 +343,15 @@ function dict_promise(word) {
 
 async function is_word(word) {
   try {
-    await dict_promise(word);
+    await dict_promise1(word);
     return true;
   } catch (error) {
-    return false;
+    try {
+      await dict_promise2(word);
+      return true;
+    } catch (error) {
+      return false;
+    }
   }
 }
 
