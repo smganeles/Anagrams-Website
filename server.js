@@ -70,6 +70,7 @@ var active_players = {};
 var id_to_player = {};
 var busy = false;
 var letter_flip;
+var letters_copy = letters_rem.slice();
 
 io.on('connection', function(socket) {
   socket.on('new_player', function(name) {
@@ -255,6 +256,9 @@ io.on('connection', function(socket) {
   socket.on('disconnect', function(){
     active_players[id_to_player[socket.id]] = false;
     delete id_to_player[socket.id];
+    if (isEmpty(id_to_player)) {
+      end_game();
+    }
   })
 
 });
@@ -295,11 +299,12 @@ function play_flip() {
 }
 
 function isEmpty(obj) {
-    for(var key in obj) {
-        if(obj.hasOwnProperty(key))
-            return false;
+  for(var key in obj) {
+    if(obj.hasOwnProperty(key)) {
+      return false;
     }
-    return true;
+  }
+  return true;
 }
 
 function dict_promise(word) {
@@ -324,4 +329,17 @@ async function is_word(word) {
   } catch (error) {
     return false;
   }
+}
+
+function end_game() {
+  state = {
+    letter_bank: [],
+    players: {},
+  };
+  approval = {};
+  active_players = {};
+  id_to_player = {};
+  busy = false;
+  letters_rem = letters_copy;
+  pause_flip();
 }
