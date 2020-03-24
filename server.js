@@ -8,9 +8,11 @@ var app = express();
 var server = http.Server(app);
 var io = socketIO(server);
 
-app.set('port',5000);
+const PORT = process.env.PORT || 5000;
+
+app.set('port',PORT);
 app.use('/static', express.static(__dirname + '/static')); //Routing
-server.listen(5000, function() {
+server.listen(PORT, function() {
   console.log('Starting server on port 5000');
 });
 
