@@ -3,6 +3,7 @@ var http = require('http');
 var path = require('path');
 var socketIO = require('socket.io');
 var unirest = require('unirest');
+var fs = require('fs');
 
 var app = express();
 var server = http.Server(app);
@@ -28,6 +29,13 @@ app.get('/restart', function(req,res){
   res.redirect('/');
 });
 
+// app.get('/lookup/', function(request,response){
+//   var word = request.query["word"];
+//   console.log(word);
+//   app.get('http://www.dictionaryapi.com/api/v3/references/collegiate/json/'+word+'?key=79ffc137-e40a-4e53-899e-b0e16fb1441b',function(req,res){
+//     console.log(res.body);
+//   });
+// });
 //////////////////////////////////////////
 
 // let letters_rem = {
@@ -36,7 +44,18 @@ app.get('/restart', function(req,res){
 //   S: 6, T: 9, U: 6, V: 3, W: 3, X: 2, Y: 3, Z: 2
 // }
 
-let letters_rem = [
+var wordset;
+fs.readFile('./static/wordlist.txt','utf8', function read(err, data) {
+  if (err) {
+    throw err;
+  } else {
+    wordset = new Set(data.split("\r\n"));
+    // console.log(wordset.size);
+    // console.log(wordset.has('HOLAA'));
+  }
+});
+
+var letters_rem = [
   "A","A","A","A","A","A","A","A","A","A","A","A","A",
   "B","B","B",
   "C","C","C",
@@ -144,6 +163,8 @@ io.on('connection', function(socket) {
     var valid = true;
     if (busy) {
       socket.emit('alert',busy + " in process");
+      // await (busy==true);
+      console.log('here');
       valid = false;
     }
     var attempt;
@@ -371,23 +392,38 @@ function dict_promise2(word) {
   });
 }
 
-//TODO:
-//proper word patch:
-//only use Merriam webster, check if any definition not capital
+function scrabbledict_promise(word) {
+  return new Promise (function(resolve,reject){
+    if (wordset.has(word)) {
+      resolve();
+    } else {
+      reject();
+    }
+  });
+}
 
 async function is_word(word) {
   try {
-    await dict_promise1(word);
+    await scrabbledict_promise(word);
     return true;
   } catch (error) {
-    try {
-      await dict_promise2(word);
-      return true;
-    } catch (error) {
-      return false;
-    }
+    return false;
   }
 }
+
+// async function is_word(word) {
+//   try {
+//     await dict_promise1(word);
+//     return true;
+//   } catch (error) {
+//     try {
+//       await dict_promise2(word);
+//       return true;
+//     } catch (error) {
+//       return false;
+//     }
+//   }
+// }
 
 function end_game() {
   state = {
