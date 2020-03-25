@@ -30,9 +30,13 @@ $(document).ready(function() {
 
 	$("#player_join").click(function(){
 		var name = $("#nameInput").val().trim();
-		socket.emit('new_player',name);
-		id = name;
-		$("#login_back").hide();
+		if (name.includes(" ")) {
+			$("#login_msg").html("No spaces allowed in Name")
+		} else {
+			socket.emit('new_player',name);
+			id = name;
+			$("#login_back").hide();
+		};
 	});
 
 	$("#nameInput").on("keyup", function(event) { //submit word when press enter

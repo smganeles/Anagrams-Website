@@ -85,8 +85,8 @@ io.on('connection', function(socket) {
     if (isEmpty(state["players"])) {
       play_flip();
     }
-    if (!state["players"].hasOwnProperty(name)) { //always true, cause will only send new_player if really new
-      state["players"][name] = [];
+    if (!state["players"].hasOwnProperty(name)) {
+      state["players"][name.replace(/"/g, '')] = [];
     }
     active_players[name] = true;
     approval[name] = null;
