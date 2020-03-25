@@ -142,13 +142,17 @@ io.on('connection', function(socket) {
 
   socket.on('steal', async function(data) {
     var valid = true;
-    var word = data["new_word"].toUpperCase();
-    var old_word = data["steal_word"].toUpperCase();
-    var word_c = word.split('');
     if (busy) {
       socket.emit('alert',busy + " in process");
       valid = false;
     }
+    if (valid == true){
+      busy = "stealing";
+      pause_flip();
+    }
+    var word = data["new_word"].toUpperCase();
+    var old_word = data["steal_word"].toUpperCase();
+    var word_c = word.split('');
     if (valid==true) {  //dictionary check
       x = await is_word(word);
       if (!x) {
@@ -188,9 +192,11 @@ io.on('connection', function(socket) {
         }
       }
     }
+    if (valid==false){
+      end_steal();
+    }
     if (valid==true) {
-      busy = "stealing";
-      pause_flip();
+
       var p_from = data["player_from"];
       var p_to = data["player_to"];
       io.sockets.emit('approval',{
