@@ -315,6 +315,17 @@ function play_flip() {
       letters_rem.splice(rand_idx,1);
       state["letter_bank"].push(letter);
       refresh();
+    } 
+    else if (num_remain == 0){
+      io.sockets.emit('msg',"GAME HAS ENDED!!");
+      for (player in state["players"]) {
+        io.sockets.emit('msg', player+ ":");
+        var total=0;
+        for (word of state["players"][player]) {
+          total += word.length-2; 
+        }
+        io.sockets.emit('msg',"&ensp;"+total+" Points");
+      }
     }
   }, flip_timer);
 }
