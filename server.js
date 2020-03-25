@@ -343,7 +343,7 @@ function dict_promise2(word) {
       .end(function(res){
         // console.log("2done");
         // console.log(res.body.length);
-        if (!Array.isArray(res.body[0])) { //word found in dictionary
+        if (!(typeof res.body[0]=="string")) { //word found in dictionary
           resolve();
         } else {
           reject();
