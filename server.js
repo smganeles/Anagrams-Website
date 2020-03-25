@@ -146,9 +146,11 @@ io.on('connection', function(socket) {
       socket.emit('alert',busy + " in process");
       valid = false;
     }
+    var attempt;
     if (valid == true){
       busy = "stealing";
       pause_flip();
+      attempt = true;
     }
     var word = data["new_word"].toUpperCase();
     var old_word = data["steal_word"].toUpperCase();
@@ -192,7 +194,7 @@ io.on('connection', function(socket) {
         }
       }
     }
-    if (valid==false){
+    if (valid==false && attempt==true){
       end_steal();
     }
     if (valid==true) {
