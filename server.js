@@ -115,7 +115,7 @@ io.on('connection', function(socket) {
 
   socket.on('chat_upld',function(msg){
     io.sockets.emit('chat',msg);
-    io.sockets.emit('msg',"wordset size"+wordset.size());
+    io.sockets.emit('msg',"wordset size"+wordset.size);
   });
 
   socket.on('word_submit', async function(data) {
