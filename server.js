@@ -44,7 +44,7 @@ app.get('/restart', function(req,res){
 //   S: 6, T: 9, U: 6, V: 3, W: 3, X: 2, Y: 3, Z: 2
 // }
 
-var wordset;
+// var wordset;
 fs.readFile('./static/wordlist.txt','utf8', function read(err, data) {
   if (err) {
     throw err;
