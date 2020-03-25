@@ -162,16 +162,20 @@ io.on('connection', function(socket) {
   socket.on('steal', async function(data) {
     var valid = true;
     if (busy) {
-      socket.emit('alert',busy + " in process");
+      // socket.emit('alert',"one moment, "+busy+" in process");
       // await (busy==true);
-      console.log('here');
-      valid = false;
+      try {
+        await wait_until_free();
+      } catch {
+        io.sockets.emit('alert',"Busy too long; Something is wrong");
+        valid=false;
+      }
     }
-    var attempt;
+    // var attempt;
     if (valid == true){
       busy = "stealing";
       pause_flip();
-      attempt = true;
+      // attempt = true;
     }
     var word = data["new_word"].toUpperCase();
     var old_word = data["steal_word"].toUpperCase();
@@ -215,11 +219,9 @@ io.on('connection', function(socket) {
         }
       }
     }
-    if (valid==false && attempt==true){
+    if (valid==false){
       end_steal();
-    }
-    if (valid==true) {
-
+    } else {
       var p_from = data["player_from"];
       var p_to = data["player_to"];
       io.sockets.emit('approval',{
@@ -409,6 +411,17 @@ async function is_word(word) {
   } catch (error) {
     return false;
   }
+}
+
+function wait_until_free() {
+  return new Promise (function(resolve,reject){
+    a = setInterval(function(){
+      if
+    },100);
+    b = setTimeout(function(){
+      clearInterval(a);
+    },5000);
+  });
 }
 
 // async function is_word(word) {
