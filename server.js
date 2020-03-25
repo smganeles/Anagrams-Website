@@ -416,10 +416,13 @@ async function is_word(word) {
 function wait_until_free() {
   return new Promise (function(resolve,reject){
     a = setInterval(function(){
-      if
-    },100);
+      if (busy==false) {
+        resolve();
+      }
+    },50);
     b = setTimeout(function(){
       clearInterval(a);
+      reject();
     },5000);
   });
 }
