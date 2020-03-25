@@ -343,7 +343,7 @@ function dict_promise2(word) {
       .end(function(res){
         // console.log("2done");
         // console.log(res.body.length);
-        if (res.body.length==1) { //word found in dictionary with only 1 definition
+        if (!Array.isArray(res.body[0])) { //word found in dictionary
           resolve();
         } else {
           reject();
