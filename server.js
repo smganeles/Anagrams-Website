@@ -45,15 +45,12 @@ app.get('/restart', function(req,res){
 // }
 
 // var wordset;
-fs.readFile('./static/wordlist.txt','utf8', function read(err, data) {
-  if (err) {
-    throw err;
-  } else {
-    wordset = new Set(data.split("\r\n"));
-    // console.log(wordset.size);
-    // console.log(wordset.has('HOLAA'));
-  }
-});
+// let wordset;
+// setTimeout(function(){
+//   wordset = create_wordset();
+//   console.log(wordset);
+// },1000);
+var wordset = new Set(fs.readFileSync('./static/wordlist.txt','utf8').split("\r\n"));
 
 var letters_rem = [
   "A","A","A","A","A","A","A","A","A","A","A","A","A",
@@ -454,3 +451,15 @@ function end_game() {
   letters_rem = letters_copy;
   pause_flip();
 }
+
+function create_wordset() {
+  fs.readFile('./static/wordlist.txt','utf8', function read(err, data) {
+    if (err) {
+      throw err;
+    } else {
+      x = new Set(data.split("\r\n"));
+      return x;
+    }
+  });
+}
+
