@@ -161,6 +161,7 @@ io.on('connection', function(socket) {
 
   socket.on('steal', async function(data) {
     var valid = true;
+    pause_flip();
     if (busy) {
       // socket.emit('alert',"one moment, "+busy+" in process");
       // await (busy==true);
@@ -174,7 +175,6 @@ io.on('connection', function(socket) {
     // var attempt;
     if (valid == true){
       busy = "stealing";
-      pause_flip();
       // attempt = true;
     }
     var word = data["new_word"].toUpperCase();
