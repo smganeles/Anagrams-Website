@@ -281,7 +281,7 @@ io.on('connection', function(socket) {
 
   socket.on('disapprove', function(id){
     approval[id]=false;
-    io.sockets.emit('msg',player+" disapproves");
+    io.sockets.emit('msg',id_to_player[socket.id]+" disapproves");
   });
 
   socket.on('disconnect', function(){
