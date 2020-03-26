@@ -319,6 +319,7 @@ function end_steal() {
 }
 
 function play_flip() {
+  clearInterval(letter_flip);
   letter_flip = setInterval(function() {  //letter flipping
     var num_remain = letters_rem.length;
     if (num_remain > 0) {
