@@ -100,9 +100,9 @@ var letters_copy = letters_rem.slice();
 
 io.on('connection', function(socket) {
   socket.on('new_player', function(name) {
-    // console.log("hi".toUpperCase()=="HI".toUpperCase()); //true
-    // console.log(active_players);
-    // console.log(state);
+    console.log(wordset);
+    console.log(__dirname);
+    console.log(path.join(__dirname,'static/wordlist.txt'));
     if (isEmpty(state["players"])) {
       play_flip();
     }
