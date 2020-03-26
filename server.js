@@ -152,7 +152,6 @@ io.on('connection', function(socket) {
 
   socket.on('steal', async function(data) {
     var valid = true;
-    pause_flip();
     if (busy) {
       socket.emit('alert',busy+" in process");
       valid = false;
@@ -162,10 +161,10 @@ io.on('connection', function(socket) {
       //   io.sockets.emit('alert',"Busy too long; Something is wrong");
       //   valid=false;
       // }
-    }
-    if (valid == true){
+    } else {
       busy = "stealing";
     }
+    pause_flip();
     var word = data["new_word"].toUpperCase();
     var old_word = data["steal_word"].toUpperCase();
     var word_c = word.split('');
