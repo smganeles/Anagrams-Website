@@ -110,11 +110,11 @@ io.on('connection', function(socket) {
 
   socket.on('word_submit', async function(data) {
     var valid = true;
-    var word = data["word"].toUpperCase();
     if (busy) {
       socket.emit('alert',busy + " in process");
       valid = false;
     }
+    var word = data["word"].toUpperCase();
     if (valid==true) {
       if (word.length<3) {
         socket.emit('alert',"word must be 3 letters or longer");
@@ -152,7 +152,9 @@ io.on('connection', function(socket) {
 
   socket.on('steal', async function(data) {
     var valid = true;
-    if (busy) {
+    if (busy==false) {
+      busy = "stealing";
+    } else {
       socket.emit('alert',busy+" in process");
       valid = false;
       // try {
@@ -161,8 +163,6 @@ io.on('connection', function(socket) {
       //   io.sockets.emit('alert',"Busy too long; Something is wrong");
       //   valid=false;
       // }
-    } else {
-      busy = "stealing";
     }
     pause_flip();
     var word = data["new_word"].toUpperCase();
