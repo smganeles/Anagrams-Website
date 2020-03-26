@@ -52,7 +52,7 @@ app.get('/restart', function(req,res){
 // },1000);
 
 
-var wordset = new Set(fs.readFileSync(__dirname+'/static/wordlist.txt','utf8').split("\r\n"));
+var wordset = new Set(fs.readFileSync(path.join(__dirname,'static/wordlist.txt'),'utf8').split("\r\n"));
 
 // var wordset = new Set(fs.readFileSync('https://raw.githubusercontent.com/jmlewis/valett/master/scrabble/sowpods.txt','utf8').split("\r\n"));
 
@@ -166,19 +166,17 @@ io.on('connection', function(socket) {
     var valid = true;
     pause_flip();
     if (busy) {
-      // socket.emit('alert',"one moment, "+busy+" in process");
-      // await (busy==true);
-      try {
-        await wait_until_free();
-      } catch {
-        io.sockets.emit('alert',"Busy too long; Something is wrong");
-        valid=false;
-      }
+      socket.emit('alert',busy+" in process");
+      valid = false;
+      // try {
+      //   await wait_until_free();
+      // } catch {
+      //   io.sockets.emit('alert',"Busy too long; Something is wrong");
+      //   valid=false;
+      // }
     }
-    // var attempt;
     if (valid == true){
       busy = "stealing";
-      // attempt = true;
     }
     var word = data["new_word"].toUpperCase();
     var old_word = data["steal_word"].toUpperCase();
