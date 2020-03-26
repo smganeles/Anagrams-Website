@@ -50,7 +50,12 @@ app.get('/restart', function(req,res){
 //   wordset = create_wordset();
 //   console.log(wordset);
 // },1000);
-var wordset = new Set(fs.readFileSync('./static/wordlist.txt','utf8').split("\r\n"));
+
+
+var wordset = new Set(fs.readFileSync(__dirname+'/static/wordlist.txt','utf8').split("\r\n"));
+
+// var wordset = new Set(fs.readFileSync('https://raw.githubusercontent.com/jmlewis/valett/master/scrabble/sowpods.txt','utf8').split("\r\n"));
+
 
 var letters_rem = [
   "A","A","A","A","A","A","A","A","A","A","A","A","A",
