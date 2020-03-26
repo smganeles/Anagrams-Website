@@ -44,18 +44,9 @@ app.get('/restart', function(req,res){
 //   S: 6, T: 9, U: 6, V: 3, W: 3, X: 2, Y: 3, Z: 2
 // }
 
-// var wordset;
-// let wordset;
-// setTimeout(function(){
-//   wordset = create_wordset();
-//   console.log(wordset);
-// },1000);
 
-
-var wordset = new Set(fs.readFileSync(path.join(__dirname,'static/wordlist.txt'),'utf8').split("\r\n"));
-
-// var wordset = new Set(fs.readFileSync('https://raw.githubusercontent.com/jmlewis/valett/master/scrabble/sowpods.txt','utf8').split("\r\n"));
-
+var wordset = new Set(fs.readFileSync(path.join(__dirname,'static/wordlist.txt'),'utf8').replace("\r\n").split("\n"));
+//only works non-locally (local split is "\r\n")
 
 var letters_rem = [
   "A","A","A","A","A","A","A","A","A","A","A","A","A",
@@ -100,9 +91,6 @@ var letters_copy = letters_rem.slice();
 
 io.on('connection', function(socket) {
   socket.on('new_player', function(name) {
-    console.log(wordset);
-    console.log(__dirname);
-    console.log(path.join(__dirname,'static/wordlist.txt'));
     if (isEmpty(state["players"])) {
       play_flip();
     }
@@ -117,7 +105,7 @@ io.on('connection', function(socket) {
 
   socket.on('chat_upld',function(msg){
     io.sockets.emit('chat',msg);
-    io.sockets.emit('msg',"wordset size"+wordset.size);
+    // io.sockets.emit('msg',"wordset size"+wordset.size);
   });
 
   socket.on('word_submit', async function(data) {
