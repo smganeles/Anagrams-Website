@@ -45,7 +45,7 @@ app.get('/restart', function(req,res){
 // }
 
 // console.log(fs.readFileSync('./static/wordlist.txt','utf8'));
-var wordset = new Set(fs.readFileSync(path.join(__dirname,'static/wordlist.txt'),'utf8').split("\r\n"));
+var wordset = new Set(fs.readFileSync(path.join(__dirname,'static/wordlist.txt'),'utf8').split("\n"));
 //only works non-locally (local split is "\r\n")
 // .replace("\r\n","\n")  ---not working 
 
@@ -77,7 +77,6 @@ var letters_rem = [
   "Y","Y","Y",
   "Z","Z"];
 
-// var letters_copy = letters_rem.slice();
 var letters_copy = [
   "A","A","A","A","A","A","A","A","A","A","A","A","A",
   "B","B","B",
@@ -108,7 +107,7 @@ var letters_copy = [
 
 
 
-var flip_timer = 1000;
+var flip_timer = 8000;
 var state = {
   letter_bank: [],
   players: {},
@@ -117,10 +116,11 @@ var approval = {};
 var active_players = {};
 var id_to_player = {};
 var busy = false;
-var letter_flip;
+var letter_flip = false;
 var word_queue = [];
 var chosen;
-
+var flip_starttime;
+var flip_pausetime;
 
 io.on('connection', function(socket) {
   socket.on('new_player', function(name) {
@@ -136,8 +136,26 @@ io.on('connection', function(socket) {
     refresh();
   });
 
-  socket.on('chat_upld',function(msg){
-    io.sockets.emit('chat',msg);
+  socket.on('chat_upld',function(data){
+    var sender;
+    var msg;
+    for (key in data) {
+      sender = key;
+      msg = data[key];
+    }
+    if (msg.slice(0,10) == "FLIP_SPEED") {
+      parsed_msg = msg.split(" ");
+      flip_timer = parseInt(parsed_msg[parsed_msg.length-1]);
+      pause_flip();
+      play_flip();
+    } 
+    else if (msg.slice(0,6) == "PAUSE") {
+      pause_flip();
+    }
+    else if (msg.slice(0,5) == "PLAY") {
+      play_flip();
+    }
+    io.sockets.emit('chat',sender + ": " + msg);
     // io.sockets.emit('msg',"wordset size"+wordset.size);
   });
 
@@ -167,6 +185,7 @@ io.on('connection', function(socket) {
       return;
     } else {
       busy = true;
+      pause_flip();
     }
     if (word.length<3) {
       socket.emit('alert',"word must be 3 letters or longer");
@@ -219,8 +238,12 @@ function null_approval() {
   }
 }
 
-function pause_flip() {
-  clearInterval(letter_flip);
+function end_word() {
+  busy = false;
+  if (word_queue.length>0) {
+    word_queue[0][1].emit('word_submit',word_queue[0][0]); //run_queue;
+  }
+  play_flip();
 }
 
 function end_steal() {
@@ -230,29 +253,52 @@ function end_steal() {
   refresh();
 }
 
-function play_flip() {
+function pause_flip() {
+  if (letter_flip) {
+    flip_pausetime = Date.now();
+  }
   clearInterval(letter_flip);
-  letter_flip = setInterval(function() {  //letter flipping
-    var num_remain = letters_rem.length;
-    if (num_remain > 0) {
-      var rand_idx = Math.floor(Math.random()*num_remain);
-      var letter = letters_rem[rand_idx];
-      letters_rem.splice(rand_idx,1);
-      state["letter_bank"].push(letter);
-      refresh();
-    } 
-    else if (num_remain == 0){
-      io.sockets.emit('msg',"GAME HAS ENDED!!");
-      for (player in state["players"]) {
-        io.sockets.emit('msg', player+ ":");
-        var total=0;
-        for (word of state["players"][player]) {
-          total += word.length-2; 
+  letter_flip = false;
+}
+
+function play_flip() {
+  if (!letter_flip) { //otherwise mutiple calls will mess up "remaining"
+    clearInterval(letter_flip);
+    remaining = flip_timer - (flip_pausetime - flip_starttime);
+    setTimeout(function() {
+      flip_letter();
+      letter_flip = setInterval(function() {  //letter flipping
+        flip_starttime = Date.now();
+        flip_letter();
+        if (letters_rem.length == 0){
+          count_points();
         }
-        io.sockets.emit('msg',"&ensp;"+total+" Points");
-      }
+      }, flip_timer);
+    }, remaining);
+  }
+}
+
+function flip_letter(num_remain) {
+  var num_remain = letters_rem.length;
+    if (num_remain>0) {
+    var rand_idx = Math.floor(Math.random()*num_remain);
+    var letter = letters_rem[rand_idx];
+    letters_rem.splice(rand_idx,1);
+    state["letter_bank"].push(letter);
+    refresh();
+  } 
+}
+
+function count_points() {
+  io.sockets.emit('msg',"GAME HAS ENDED!!");
+  for (player in state["players"]) {
+    io.sockets.emit('msg', player+ ":");
+    var total=0;
+    for (word of state["players"][player]) {
+      total += word.length-2; 
     }
-  }, flip_timer);
+    io.sockets.emit('msg',"&ensp;"+total+" Points");
+  }
 }
 
 function isEmpty(obj) {
@@ -284,6 +330,7 @@ async function is_word(word) {
 }
 
 function end_game() {
+  flip_timer = 8000;
   pause_flip();
   state = {
     letter_bank: [],
@@ -442,9 +489,3 @@ function which_word(obj,socket) {
 //   return new Promise(resolve => setTimeout(resolve, ms));
 // }
 
-function end_word() {
-  busy = false;
-  if (word_queue.length>0) {
-    word_queue[0][1].emit('word_submit',word_queue[0][0]); //run_queue;
-  }
-}

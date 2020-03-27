@@ -78,8 +78,9 @@ $(document).ready(function() {
 	});
 
 	$("#chat_sbmt").click(function(){
-		var msg = id + ": " + $("#chat_msg").val();
-		socket.emit('chat_upld',msg);
+		var data = {};
+		data[id] = $("#chat_msg").val();
+		socket.emit('chat_upld',data);
 		$("#chat_msg").val("");
 	});
 
