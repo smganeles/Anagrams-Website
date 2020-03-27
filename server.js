@@ -38,18 +38,11 @@ app.get('/restart', function(req,res){
 // });
 //////////////////////////////////////////
 
-// let letters_rem = {
-//   A: 13, B: 3, C: 3, D: 6, E: 18, F: 3, G: 4, H: 3, I: 12,
-//   J: 2, K: 2, L: 5, M: 3, N: 8, O: 11, P: 4, Q: 2, R: 9,
-//   S: 6, T: 9, U: 6, V: 3, W: 3, X: 2, Y: 3, Z: 2
-// }
-
-// console.log(fs.readFileSync('./static/wordlist.txt','utf8'));
-var wordset = new Set(fs.readFileSync(path.join(__dirname,'static/wordlist.txt'),'utf8').split("\n"));
+let wordset = new Set(fs.readFileSync(path.join(__dirname,'static/wordlist.txt'),'utf8').split("\n"));
 //only works non-locally (local split is "\r\n")
 // .replace("\r\n","\n")  ---not working 
 
-var letters_rem = [
+let letters_rem = [
   "A","A","A","A","A","A","A","A","A","A","A","A","A",
   "B","B","B",
   "C","C","C",
@@ -77,50 +70,21 @@ var letters_rem = [
   "Y","Y","Y",
   "Z","Z"];
 
-var letters_copy = [
-  "A","A","A","A","A","A","A","A","A","A","A","A","A",
-  "B","B","B",
-  "C","C","C",
-  "D","D","D","D","D","D",
-  "E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E",
-  "F","F","F",
-  "G","G","G","G",
-  "H","H","H",
-  "I","I","I","I","I","I","I","I","I","I","I","I",
-  "J","J",
-  "K","K",
-  "L","L","L","L","L",
-  "M","M","M",
-  "N","N","N","N","N","N","N","N",
-  "O","O","O","O","O","O","O","O","O","O","O",
-  "P","P","P","P",
-  "Q","Q",
-  "R","R","R","R","R","R","R","R","R",
-  "S","S","S","S","S","S",
-  "T","T","T","T","T","T","T","T","T",
-  "U","U","U","U","U","U",
-  "V","V","V",
-  "W","W","W",
-  "X","X",
-  "Y","Y","Y",
-  "Z","Z"];
-
-
-
-var flip_timer = 8000;
-var state = {
+let letters_copy = letters_rem.slice();
+let flip_timer = 8000;
+let state = {
   letter_bank: [],
   players: {},
 };
-var approval = {};
-var active_players = {};
-var id_to_player = {};
-var busy = false;
-var letter_flip = false;
-var word_queue = [];
-var chosen;
-var flip_starttime;
-var flip_pausetime;
+let approval = {};
+let active_players = {};
+let id_to_player = {};
+let busy = false;
+let letter_flip = false;
+let word_queue = [];
+let chosen;
+let flip_starttime;
+let flip_pausetime;
 
 io.on('connection', function(socket) {
   socket.on('new_player', function(name) {
@@ -171,8 +135,6 @@ io.on('connection', function(socket) {
   socket.on('disconnect', function(){
     active_players[id_to_player[socket.id]] = false;
     delete id_to_player[socket.id];
-    // console.log(active_players);
-    // console.log(id_to_player);
     if (isEmpty(id_to_player)) {
       end_game();
     }
