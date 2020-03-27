@@ -74,7 +74,37 @@ var letters_rem = [
   "W","W","W",
   "X","X",
   "Y","Y","Y",
-  "Z","Z"]
+  "Z","Z"];
+
+// var letters_copy = letters_rem.slice();
+var letters_copy = [
+  "A","A","A","A","A","A","A","A","A","A","A","A","A",
+  "B","B","B",
+  "C","C","C",
+  "D","D","D","D","D","D",
+  "E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E",
+  "F","F","F",
+  "G","G","G","G",
+  "H","H","H",
+  "I","I","I","I","I","I","I","I","I","I","I","I",
+  "J","J",
+  "K","K",
+  "L","L","L","L","L",
+  "M","M","M",
+  "N","N","N","N","N","N","N","N",
+  "O","O","O","O","O","O","O","O","O","O","O",
+  "P","P","P","P",
+  "Q","Q",
+  "R","R","R","R","R","R","R","R","R",
+  "S","S","S","S","S","S",
+  "T","T","T","T","T","T","T","T","T",
+  "U","U","U","U","U","U",
+  "V","V","V",
+  "W","W","W",
+  "X","X",
+  "Y","Y","Y",
+  "Z","Z"];
+
 
 
 var flip_timer = 8000;
@@ -87,7 +117,7 @@ var active_players = {};
 var id_to_player = {};
 var busy = false;
 var letter_flip;
-var letters_copy = letters_rem.slice();
+
 
 io.on('connection', function(socket) {
   socket.on('new_player', function(name) {
@@ -431,6 +461,7 @@ function wait_until_free() {
 // }
 
 function end_game() {
+  pause_flip();
   state = {
     letter_bank: [],
     players: {},
@@ -440,7 +471,6 @@ function end_game() {
   id_to_player = {};
   busy = false;
   letters_rem = letters_copy;
-  pause_flip();
 }
 
 function create_wordset() {
