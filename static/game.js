@@ -49,19 +49,20 @@ $(document).ready(function() {
 	$("#submit").click(function(){ //submit a word
 		var word = $("#submission").val();
 		$("#submission").val("");
-		if (stealing == false) {
-			package = {"word":word,"id":id};
-			// socket.emit('word_submit',package);
-			socket.emit('word_submit',word);
-		} else { //stealing a word
-			package = {
-				"new_word":word,
-				"steal_word":steal_word,
-				"player_from":player_from,
-				"player_to":id};
-			socket.emit('steal',package);
-			socket.emit('hey');
-		}
+		// if (stealing == false) {
+		// 	package = {"word":word,"id":id};
+		// 	// socket.emit('word_submit',package);
+		// 	socket.emit('word_submit',word);
+		// } else { //stealing a word
+		// 	package = {
+		// 		"new_word":word,
+		// 		"steal_word":steal_word,
+		// 		"player_from":player_from,
+		// 		"player_to":id};
+		// 	socket.emit('steal',package);
+		// 	socket.emit('hey');
+		// }
+		socket.emit('word_submit',word);
 		stealing=false;
 		active=null;
 		player_from=null;
@@ -177,7 +178,6 @@ $(document).ready(function() {
 		$('#logbox').scrollTop($('#logbox')[0].scrollHeight);
 		$("#approval").hide(1000);
 	});
-
 
 
 

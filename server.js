@@ -44,9 +44,10 @@ app.get('/restart', function(req,res){
 //   S: 6, T: 9, U: 6, V: 3, W: 3, X: 2, Y: 3, Z: 2
 // }
 
-
-var wordset = new Set(fs.readFileSync(path.join(__dirname,'static/wordlist.txt'),'utf8').replace("\r\n").split("\n"));
+// console.log(fs.readFileSync('./static/wordlist.txt','utf8'));
+var wordset = new Set(fs.readFileSync(path.join(__dirname,'static/wordlist.txt'),'utf8').split("\r\n"));
 //only works non-locally (local split is "\r\n")
+// .replace("\r\n","\n")  ---not working 
 
 var letters_rem = [
   "A","A","A","A","A","A","A","A","A","A","A","A","A",
@@ -140,172 +141,6 @@ io.on('connection', function(socket) {
     // io.sockets.emit('msg',"wordset size"+wordset.size);
   });
 
-  // socket.on('word_submit', async function(data) {
-  //   var valid = true;
-  //   if (busy) {
-  //     socket.emit('alert',busy + " in process");
-  //     valid = false;
-  //   }
-  //   var word = data["word"].toUpperCase();
-  //   if (valid==true) {
-  //     if (word.length<3) {
-  //       socket.emit('alert',"word must be 3 letters or longer");
-  //       valid = false;
-  //     }
-  //   }
-  //   if (valid==true) {  //dictionary check
-  //     var x = await is_word(word);
-  //     if (!x) {
-  //       socket.emit('alert',"not a valid word");
-  //       valid = false;
-  //     }
-  //   }
-  //   if (valid==true) { //check if all letters in the letter bank
-  //     var letters = state["letter_bank"].slice();
-  //     for (letter of word) {
-  //       if (letters.includes(letter)) { //remove it and continue iterating
-  //         const index = letters.indexOf(letter);
-  //         letters.splice(index,1);
-  //       } else {
-  //         socket.emit('alert',"those letters not in the bank");
-  //         valid = false;
-  //         break;
-  //       }
-  //     }
-  //   }
-  //   if (valid == true) {
-  //     var player = data["id"];
-  //     state["letter_bank"] = letters;
-  //     state["players"][player].push(word);
-  //     io.sockets.emit('msg',player+" took "+word);
-  //   }
-  //   refresh();
-  // });
-
-  socket.on('steal', async function(data) {
-    var valid = true;
-    if (busy==false) {
-      busy = "stealing";
-    } else {
-      socket.emit('alert',busy+" in process");
-      valid = false;
-      // try {
-      //   await wait_until_free();
-      // } catch {
-      //   io.sockets.emit('alert',"Busy too long; Something is wrong");
-      //   valid=false;
-      // }
-    }
-    pause_flip();
-    var word = data["new_word"].toUpperCase();
-    var old_word = data["steal_word"].toUpperCase();
-    var word_c = word.split('');
-    if (valid==true) {  //dictionary check
-      var x = await is_word(word);
-      if (!x) {
-        socket.emit('alert',"not a valid word");
-        valid = false;
-      }
-    }
-    if (valid==true) { //check that all old letters are used
-      for (letter of old_word) { //take out all the letters in the old word
-        if (word_c.includes(letter)) {
-          const index = word_c.indexOf(letter);
-          word_c.splice(index,1);
-        } else {
-          socket.emit('alert',"missing letters from original word");
-          valid = false;
-          break;
-        }
-      }
-    }
-    if (valid==true) { //check that new letters added
-      if (word_c.length==0) {
-        socket.emit('alert',"no new letters added");
-        valid = false;
-      }  
-    }
-    var extra_letters = word_c.slice();
-    if (valid==true) { //check if all added letters are in the bank
-      var letters = state["letter_bank"].slice();
-      for (letter of word_c) {
-        if (letters.includes(letter)) {
-          const index = letters.indexOf(letter);
-          letters.splice(index,1);
-        } else {
-          socket.emit('alert',"added letters not in the bank");
-          valid = false;
-          break;
-        }
-      }
-    }
-    if (valid==false){
-      end_steal();
-    } else {
-      var p_from = data["player_from"];
-      var p_to = data["player_to"];
-      io.sockets.emit('approval',{
-        "p_to": p_to,
-        "msg": p_to +" wants to steal "+word+" from "+old_word+" ("+p_from+")"
-      });
-      var timer_list = [];
-      for (i=0;i<61;i++){
-        (function(i) {
-          timer_list.push(setTimeout(function(){ 
-            var all_approve = true;
-            var all_disapprove = true;
-            var apprv = "";
-            var disapprv = "";
-            for (player in approval) {
-              if (player != p_to && active_players[player]==true) {
-                if (approval[player] == null){
-                  all_approve = false;
-                  all_disapprove = false;
-                }
-                else if (approval[player] == false){
-                  disapprv += " " + player;
-                  all_approve = false;
-                }
-                else if (approval[player]==true){
-                  apprv += " " + player;
-                  all_disapprove = false;
-                }
-              }
-            }
-            if (all_approve == true){
-              for (timer of timer_list) {
-                clearTimeout(timer);
-              }
-              for (letter of extra_letters) {
-                const index = state["letter_bank"].indexOf(letter);
-                state["letter_bank"].splice(index,1);
-              }
-              state["players"][p_to].push(word);
-              const index = state["players"][p_from].indexOf(old_word);
-              state["players"][p_from].splice(index,1);
-              io.sockets.emit('verdict',p_to+" steals "+word+" from "+old_word+" ("+p_from+")");
-              end_steal();
-            }
-            else if (all_disapprove == true){
-              for (timer of timer_list) {
-                clearTimeout(timer);
-              }
-              io.sockets.emit('verdict',"all active players disapproved");
-              end_steal();
-            }
-            else if (i==5 || (i>1 && i%10==0 && i<60)) {
-              var waiting = "Waiting for Unanimous Decision</p> <p class='msg'>&ensp; Approves:"+apprv+"</p><p class='msg'>&ensp; Disapproves:"+disapprv;
-              io.sockets.emit('msg',waiting);
-            }
-            else if (i==60) {
-              io.sockets.emit('verdict',"Took too long, moving on")
-              end_steal();            }
-          }, 1500*i));
-        })(i);
-      }
-    }
-  });
-
   socket.on('approve', function(id){ 
     approval[id]=true;
   });
@@ -335,17 +170,18 @@ io.on('connection', function(socket) {
     }
     if (word.length<3) {
       socket.emit('alert',"word must be 3 letters or longer");
+      end_word();
       return;
     }
     var x = await is_word(word);
-    if (!x) {
+    if (!x) { //not in dictionary
       socket.emit('alert',"not a valid word");
+      end_word();
       return;
     }
-    console.log('bout to submit');
     x = word_submit(word,socket);
-    if (!x) {
-      queue[0][1].emit('word_submit',queue[0][0]);
+    if (!x) { //word from bank
+      end_word();
       return;
     } else {
       for (pair of word_queue) {
@@ -356,10 +192,15 @@ io.on('connection', function(socket) {
     var p_to = id_to_player[socket.id];
     var p_from;
     var old_word;
-    if (Object.keys(x).length>1) {
-      old_word = await which_word(x,socket);
-      p_from = x[old_word];
+    // if (Object.keys(x).length>1) {
+    //   old_word = await which_word(x,socket);
+    //   p_from = x[old_word];
+    // } else {
+    for (key in x) {
+      old_word = key;
+      p_from = x[key];
     }
+    // }
     steal_approval(p_from,p_to,old_word,word);
   });
 
@@ -484,15 +325,21 @@ function steal_approval(p_from, p_to, old_word, new_word) {
       }
     }
     if (all_approve == true){
+      var index;
       clearInterval(x);
+      var extra_letters = new_word.split('');
+      for (letter of old_word.split('')) {
+        index = extra_letters.indexOf(letter);
+        extra_letters.splice(index,1);
+      }
       for (letter of extra_letters) {
-        const index = state["letter_bank"].indexOf(letter);
+        index = state["letter_bank"].indexOf(letter);
         state["letter_bank"].splice(index,1);
       }
       state["players"][p_to].push(new_word);
-      const index = state["players"][p_from].indexOf(old_word);
+      index = state["players"][p_from].indexOf(old_word);
       state["players"][p_from].splice(index,1);
-      io.sockets.emit('verdict',p_to+" steals "+word+" from "+old_word+" ("+p_from+")");
+      io.sockets.emit('verdict',p_to+" steals "+new_word+" from "+old_word+" ("+p_from+")");
       end_steal();
     }
     else if (all_disapprove == true){
@@ -512,10 +359,8 @@ function steal_approval(p_from, p_to, old_word, new_word) {
   }, 1000);
 }
 
-
-
 function word_submit (sent_word, socket) {
-  var player = id_to_player[socket.it];
+  var player = id_to_player[socket.id];
   var word = sent_word.split("");
   var letter_bank = state["letter_bank"].slice();
   var in_bank = true;
@@ -530,8 +375,9 @@ function word_submit (sent_word, socket) {
   }
   if (in_bank) {
     state["letter_bank"] = letter_bank;
-    state["players"][player].push(word);
-    io.sockets.emit('msg',player+" took "+word);
+    state["players"][player].push(sent_word);
+    io.sockets.emit('msg',player+" took "+sent_word);
+    refresh();
     return;
   }
   var words_that_fit = {};  //player:word_that_can_steal;
@@ -549,6 +395,12 @@ function word_submit (sent_word, socket) {
           break;
         }
       }
+      if (contains) {
+        if (word_big.length==0) {
+          socket.emit('alert',"No new letters added to steal")
+          return 
+        }
+      }
       if (contains) { //check if rest of word in letter_bank
         letter_bank = state["letter_bank"].slice();
         for (letter of word_big) {
@@ -560,9 +412,9 @@ function word_submit (sent_word, socket) {
             break;
           }
         }
-        if (contains) {
-          words_that_fit[word_2] = player_from;
-        }
+      }
+      if (contains) {
+        words_that_fit[word_2] = player_from;
       }
     }
   }
@@ -589,3 +441,10 @@ function which_word(obj,socket) {
 // function timeout(ms) {
 //   return new Promise(resolve => setTimeout(resolve, ms));
 // }
+
+function end_word() {
+  busy = false;
+  if (word_queue.length>0) {
+    word_queue[0][1].emit('word_submit',word_queue[0][0]); //run_queue;
+  }
+}
