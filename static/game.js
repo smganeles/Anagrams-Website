@@ -101,15 +101,17 @@ $(document).ready(function() {
 	//update the html
 	socket.on('state', function(state) {
 		//update words
+		$("#top-row").html("");
+		$("#bottom-row").html("");
 		for (player in state["players"]) {
-			if (!document.getElementById(player)) {  //if the player isn't on the board yet
+			// if (!document.getElementById(player)) {  //if the player isn't on the board yet
 				if (player!=id) {
 					$("#top-row").append(
 						"<div class = 'col word-bank' id = '" + player + "'></div>");
 				} else {
 					$("#bottom-row").append(
 						"<div class = 'col word-bank' id = '" + player + "'></div>");
-				}
+				// }
 			}
 			$("#"+player).html("<h5>"+player+"</h5>"); //clear all words
 
