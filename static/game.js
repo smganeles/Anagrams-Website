@@ -51,7 +51,8 @@ $(document).ready(function() {
 		$("#submission").val("");
 		if (stealing == false) {
 			package = {"word":word,"id":id};
-			socket.emit('word_submit',package);
+			// socket.emit('word_submit',package);
+			socket.emit('word_submit',word);
 		} else { //stealing a word
 			package = {
 				"new_word":word,

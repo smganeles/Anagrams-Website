@@ -107,7 +107,7 @@ var letters_copy = [
 
 
 
-var flip_timer = 8000;
+var flip_timer = 1000;
 var state = {
   letter_bank: [],
   players: {},
@@ -117,6 +117,8 @@ var active_players = {};
 var id_to_player = {};
 var busy = false;
 var letter_flip;
+var word_queue = [];
+var chosen;
 
 
 io.on('connection', function(socket) {
@@ -138,47 +140,47 @@ io.on('connection', function(socket) {
     // io.sockets.emit('msg',"wordset size"+wordset.size);
   });
 
-  socket.on('word_submit', async function(data) {
-    var valid = true;
-    if (busy) {
-      socket.emit('alert',busy + " in process");
-      valid = false;
-    }
-    var word = data["word"].toUpperCase();
-    if (valid==true) {
-      if (word.length<3) {
-        socket.emit('alert',"word must be 3 letters or longer");
-        valid = false;
-      }
-    }
-    if (valid==true) {  //dictionary check
-      x = await is_word(word);
-      if (!x) {
-        socket.emit('alert',"not a valid word");
-        valid = false;
-      }
-    }
-    if (valid==true) { //check if all letters in the letter bank
-      var letters = state["letter_bank"].slice();
-      for (letter of word) {
-        if (letters.includes(letter)) { //remove it and continue iterating
-          const index = letters.indexOf(letter);
-          letters.splice(index,1);
-        } else {
-          socket.emit('alert',"those letters not in the bank");
-          valid = false;
-          break;
-        }
-      }
-    }
-    if (valid == true) {
-      var player = data["id"];
-      state["letter_bank"] = letters;
-      state["players"][player].push(word);
-      io.sockets.emit('msg',player+" took "+word);
-    }
-    refresh();
-  });
+  // socket.on('word_submit', async function(data) {
+  //   var valid = true;
+  //   if (busy) {
+  //     socket.emit('alert',busy + " in process");
+  //     valid = false;
+  //   }
+  //   var word = data["word"].toUpperCase();
+  //   if (valid==true) {
+  //     if (word.length<3) {
+  //       socket.emit('alert',"word must be 3 letters or longer");
+  //       valid = false;
+  //     }
+  //   }
+  //   if (valid==true) {  //dictionary check
+  //     var x = await is_word(word);
+  //     if (!x) {
+  //       socket.emit('alert',"not a valid word");
+  //       valid = false;
+  //     }
+  //   }
+  //   if (valid==true) { //check if all letters in the letter bank
+  //     var letters = state["letter_bank"].slice();
+  //     for (letter of word) {
+  //       if (letters.includes(letter)) { //remove it and continue iterating
+  //         const index = letters.indexOf(letter);
+  //         letters.splice(index,1);
+  //       } else {
+  //         socket.emit('alert',"those letters not in the bank");
+  //         valid = false;
+  //         break;
+  //       }
+  //     }
+  //   }
+  //   if (valid == true) {
+  //     var player = data["id"];
+  //     state["letter_bank"] = letters;
+  //     state["players"][player].push(word);
+  //     io.sockets.emit('msg',player+" took "+word);
+  //   }
+  //   refresh();
+  // });
 
   socket.on('steal', async function(data) {
     var valid = true;
@@ -199,7 +201,7 @@ io.on('connection', function(socket) {
     var old_word = data["steal_word"].toUpperCase();
     var word_c = word.split('');
     if (valid==true) {  //dictionary check
-      x = await is_word(word);
+      var x = await is_word(word);
       if (!x) {
         socket.emit('alert',"not a valid word");
         valid = false;
@@ -321,10 +323,50 @@ io.on('connection', function(socket) {
     if (isEmpty(id_to_player)) {
       end_game();
     }
-  })
+  });
 
+  socket.on('word_submit', async function(sent_word) {
+    var word = sent_word.toUpperCase();
+    if (busy) {
+      word_queue.push([word,socket]);
+      return;
+    } else {
+      busy = true;
+    }
+    if (word.length<3) {
+      socket.emit('alert',"word must be 3 letters or longer");
+      return;
+    }
+    var x = await is_word(word);
+    if (!x) {
+      socket.emit('alert',"not a valid word");
+      return;
+    }
+    console.log('bout to submit');
+    x = word_submit(word,socket);
+    if (!x) {
+      queue[0][1].emit('word_submit',queue[0][0]);
+      return;
+    } else {
+      for (pair of word_queue) {
+        pair[0].emit('alert',"stealing in process");
+      }
+      word_queue = [];
+    }
+    var p_to = id_to_player[socket.id];
+    var p_from;
+    var old_word;
+    if (Object.keys(x).length>1) {
+      old_word = await which_word(x,socket);
+      p_from = x[old_word];
+    }
+    steal_approval(p_from,p_to,old_word,word);
+  });
+
+  socket.on('chosen',function(word){
+    chosen = word;
+  });
 });
-
 
 function refresh() {
   io.sockets.emit('state', state);
@@ -381,38 +423,6 @@ function isEmpty(obj) {
   return true;
 }
 
-function dict_promise1(word) {
-  return new Promise (function(resolve, reject) {
-    wordsapi = false;
-    unirest.get("https://wordsapiv1.p.rapidapi.com/words/"+word)
-      .header("x-rapidapi-host", "wordsapiv1.p.rapidapi.com")
-      .header("x-rapidapi-key", "43be23b308msh403ea08483525a4p105ed7jsn35918a82996e")
-      .end(function(res){
-        // console.log("1done");
-        if (!res.notFound) { //no 404 error
-          resolve();
-        } else {
-          reject();
-        }
-      });
-  });
-}
-
-function dict_promise2(word) {
-  return new Promise (function(resolve,reject) {
-    unirest.get('https://www.dictionaryapi.com/api/v3/references/collegiate/json/'+word+'?key=79ffc137-e40a-4e53-899e-b0e16fb1441b')
-      .end(function(res){
-        // console.log("2done");
-        // console.log(res.body.length);
-        if (!(typeof res.body[0]=="string")) { //word found in dictionary
-          resolve();
-        } else {
-          reject();
-        }
-      });
-  });
-}
-
 function scrabbledict_promise(word) {
   return new Promise (function(resolve,reject){
     if (wordset.has(word)) {
@@ -432,34 +442,6 @@ async function is_word(word) {
   }
 }
 
-function wait_until_free() {
-  return new Promise (function(resolve,reject){
-    a = setInterval(function(){
-      if (busy==false) {
-        resolve();
-      }
-    },50);
-    b = setTimeout(function(){
-      clearInterval(a);
-      reject();
-    },5000);
-  });
-}
-
-// async function is_word(word) {
-//   try {
-//     await dict_promise1(word);
-//     return true;
-//   } catch (error) {
-//     try {
-//       await dict_promise2(word);
-//       return true;
-//     } catch (error) {
-//       return false;
-//     }
-//   }
-// }
-
 function end_game() {
   pause_flip();
   state = {
@@ -473,14 +455,137 @@ function end_game() {
   letters_rem = letters_copy;
 }
 
-function create_wordset() {
-  fs.readFile('./static/wordlist.txt','utf8', function read(err, data) {
-    if (err) {
-      throw err;
-    } else {
-      x = new Set(data.split("\r\n"));
-      return x;
-    }
+function steal_approval(p_from, p_to, old_word, new_word) {
+  io.sockets.emit('approval',{
+    "p_to": p_to,
+    "msg": p_to +" wants to steal "+new_word+" from "+old_word+" ("+p_from+")"
   });
+  var i = 0;
+  var x = setInterval(function(){
+    i+=1;
+    var all_approve = true;
+    var all_disapprove = true;
+    var apprv = "";
+    var disapprv = "";
+    for (player in approval) {
+      if (player != p_to && active_players[player]==true) {
+        if (approval[player] == null){
+          all_approve = false;
+          all_disapprove = false;
+        }
+        else if (approval[player] == false){
+          disapprv += " " + player;
+          all_approve = false;
+        }
+        else if (approval[player]==true){
+          apprv += " " + player;
+          all_disapprove = false;
+        }
+      }
+    }
+    if (all_approve == true){
+      clearInterval(x);
+      for (letter of extra_letters) {
+        const index = state["letter_bank"].indexOf(letter);
+        state["letter_bank"].splice(index,1);
+      }
+      state["players"][p_to].push(new_word);
+      const index = state["players"][p_from].indexOf(old_word);
+      state["players"][p_from].splice(index,1);
+      io.sockets.emit('verdict',p_to+" steals "+word+" from "+old_word+" ("+p_from+")");
+      end_steal();
+    }
+    else if (all_disapprove == true){
+      clearInterval(x);
+      io.sockets.emit('verdict',"all active players disapproved");
+      end_steal();
+    }
+    else if (i==5 || (i>1 && i%10==0 && i<60)) {
+      var waiting = "Waiting for Unanimous Decision</p> <p class='msg'>&ensp; Approves:"+apprv+"</p><p class='msg'>&ensp; Disapproves:"+disapprv;
+      io.sockets.emit('msg',waiting);
+    }
+    else if (i==60) {
+      clearInterval(x);
+      io.sockets.emit('verdict',"Took too long, moving on")
+      end_steal();
+    }
+  }, 1000);
 }
 
+
+
+function word_submit (sent_word, socket) {
+  var player = id_to_player[socket.it];
+  var word = sent_word.split("");
+  var letter_bank = state["letter_bank"].slice();
+  var in_bank = true;
+  for (letter of word) {
+    if (letter_bank.includes(letter)) {
+      var index = letter_bank.indexOf(letter);
+      letter_bank.splice(index,1);
+    } else {
+      in_bank = false;
+      break;
+    }
+  }
+  if (in_bank) {
+    state["letter_bank"] = letter_bank;
+    state["players"][player].push(word);
+    io.sockets.emit('msg',player+" took "+word);
+    return;
+  }
+  var words_that_fit = {};  //player:word_that_can_steal;
+  for (player_from in state["players"]) {
+    for (word_2 of state["players"][player_from]) {
+      var word_small = word_2.split("");
+      var word_big = word.slice();
+      var contains = true; //sent_word contains word_small
+      for (letter of word_small) {
+        if (word_big.includes(letter)) {
+          var index = word_big.indexOf(letter);
+          word_big.splice(index,1);
+        } else {
+          contains = false;
+          break;
+        }
+      }
+      if (contains) { //check if rest of word in letter_bank
+        letter_bank = state["letter_bank"].slice();
+        for (letter of word_big) {
+          if (letter_bank.includes(letter)) {
+            var index = letter_bank.indexOf(letter);
+            letter_bank.splice(index,1);
+          } else {
+            contains = false;
+            break;
+          }
+        }
+        if (contains) {
+          words_that_fit[word_2] = player_from;
+        }
+      }
+    }
+  }
+  if (isEmpty(words_that_fit)) {
+    socket.emit('alert',"Not in bank and no word to steal from")
+    return;
+  } else if (Object.keys(words_that_fit).length==1) {
+    return words_that_fit;
+  } else {
+    return words_that_fit;
+  }
+}
+
+function which_word(obj,socket) {
+  socket.emit('choose',obj);
+  return new Promise(resolve => 
+    setInterval(function(){
+      if (chosen) {
+        resolve();
+      }
+    },500));
+}
+
+// function timeout(ms) {
+//   return new Promise(resolve => setTimeout(resolve, ms));
+// }
