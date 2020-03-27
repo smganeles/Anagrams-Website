@@ -29,13 +29,6 @@ app.get('/restart', function(req,res){
   res.redirect('/');
 });
 
-// app.get('/lookup/', function(request,response){
-//   var word = request.query["word"];
-//   console.log(word);
-//   app.get('http://www.dictionaryapi.com/api/v3/references/collegiate/json/'+word+'?key=79ffc137-e40a-4e53-899e-b0e16fb1441b',function(req,res){
-//     console.log(res.body);
-//   });
-// });
 //////////////////////////////////////////
 
 let wordset = new Set(fs.readFileSync(path.join(__dirname,'static/wordlist.txt'),'utf8').split("\n"));
@@ -70,7 +63,7 @@ let letters_rem = [
   "Y","Y","Y",
   "Z","Z"];
 
-let letters_copy = letters_rem.slice();
+const letters_copy = letters_rem.slice();
 let flip_timer = 8000;
 let state = {
   letter_bank: [],
@@ -85,6 +78,8 @@ let word_queue = [];
 let chosen;
 let flip_starttime;
 let flip_pausetime;
+
+//////////////////////////////////////////
 
 io.on('connection', function(socket) {
   socket.on('new_player', function(name) {
@@ -108,7 +103,7 @@ io.on('connection', function(socket) {
       msg = data[key];
     }
     if (msg.slice(0,10) == "FLIP_SPEED") {
-      parsed_msg = msg.split(" ");
+      var parsed_msg = msg.split(" ");
       flip_timer = parseInt(parsed_msg[parsed_msg.length-1]);
       pause_flip();
       play_flip();
@@ -189,6 +184,8 @@ io.on('connection', function(socket) {
     chosen = word;
   });
 });
+
+//////////////////////////////////////////
 
 function refresh() {
   io.sockets.emit('state', state);
@@ -430,8 +427,6 @@ function word_submit (sent_word, socket) {
   if (isEmpty(words_that_fit)) {
     socket.emit('alert',"Not in bank and no word to steal from")
     return;
-  } else if (Object.keys(words_that_fit).length==1) {
-    return words_that_fit;
   } else {
     return words_that_fit;
   }
