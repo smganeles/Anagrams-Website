@@ -82,17 +82,17 @@ $(document).ready(function() {
 		$("#top-row").html("");
 		$("#bottom-row").html("");
 		for (player in state["players"]) {
-			// if (!document.getElementById(player)) {  //if the player isn't on the board yet
-				if (player!=id) {
-					$("#top-row").append(
-						"<div class = 'col word-bank' id = '" + player + "'></div>");
-				} else {
-					$("#bottom-row").append(
-						"<div class = 'col word-bank' id = '" + player + "'></div>");
-				// }
+			if (player!=id) {
+				$("#top-row").append(
+					"<div class = 'col word-bank' id = '" + player + "'></div>");
+			} else {
+				$("#bottom-row").append(
+					"<div class = 'col word-bank' id = '" + player + "'></div>");
+			}
+			if (!state["active_players"][player]) {
+				$("#"+player).css("background-color","#ffa6a6");
 			}
 			$("#"+player).html("<h5>"+player+"</h5>"); //clear all words
-
 			for (word of state["players"][player]) {  //redraw all words
 				var word_HTML = "";
 				for (letter of word) {

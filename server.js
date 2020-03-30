@@ -4,7 +4,6 @@ var path = require('path');
 var socketIO = require('socket.io');
 var unirest = require('unirest');
 var fs = require('fs');
-// var clonedeep = require('lodash');
 
 var app = express();
 var server = http.Server(app);
@@ -33,8 +32,6 @@ app.get('/restart', function(req,res){
 //////////////////////////////////////////
 
 let wordset = new Set(fs.readFileSync(path.join(__dirname,'static/wordlist.txt'),'utf8').split("\n"));
-//only works non-locally (local split is "\r\n")
-// .replace("\r\n","\n")  ---not working 
 
 // let letters_rem = [
 //   "A","A","A","A","A","A","A","A","A","A","A","A","A",
@@ -70,19 +67,19 @@ let flip_timer = 8000;
 let state = {
   letter_bank: [],
   players: {},
+  active_players: {}
 };
 let approval = {};
-let active_players = {};
+let focused_players = {};
 let id_to_player = {};
 let busy = false;
 let word_queue = [];
-let chosen;
 let flip_starttime;
 let flip_pausetime;
-// let letter_flip = false;
 let letter_flip;
 let single_flip;
 let flipping = false;
+let chosen;
 
 
 
@@ -96,7 +93,7 @@ io.on('connection', function(socket) {
     if (!state["players"].hasOwnProperty(name)) {
       state["players"][name.replace(/"/g, '')] = [];
     }
-    active_players[name] = true;
+    state["active_players"][name] = true;
     approval[name] = null;
     id_to_player[socket.id]=name;
     refresh();
@@ -136,7 +133,7 @@ io.on('connection', function(socket) {
   });
 
   socket.on('disconnect', function(){
-    active_players[id_to_player[socket.id]] = false;
+    state["active_players"][id_to_player[socket.id]] = false;
     delete id_to_player[socket.id];
     if (isEmpty(id_to_player)) {
       end_game();
@@ -180,7 +177,7 @@ io.on('connection', function(socket) {
     //   old_word = await which_word(x,socket);
     //   p_from = x[old_word];
     // } else {
-    for (key in x) {
+    for (key in x) { //choose the last one
       old_word = key;
       p_from = x[key];
     }
@@ -190,6 +187,10 @@ io.on('connection', function(socket) {
 
   socket.on('chosen',function(word){
     chosen = word;
+  });
+
+  socket.on('focus',function(bool){
+    focused_players[id_to_player[socket.id]] = bool;
   });
 });
 
@@ -227,19 +228,15 @@ function pause_flip() {
   clearTimeout(single_flip);
   clearInterval(letter_flip);
   flipping = false;
-  //if its still in the timeout below, letter_flip hasn't started yet and therefore clearing it wont do anyting (break it??)
-  //but single_flip is still running so both must be stopped
 }
 
 function play_flip() {
   if (!flipping) { //otherwise mutiple calls will mess up "remaining"
-    // clearInterval(letter_flip); //MIGHT NOT NEED THIS LINE
     flipping = true;
     remaining = flip_timer - (flip_pausetime - flip_starttime);
     single_flip = setTimeout(function() {
       flip_starttime = Date.now();
       flip_letter();
-      // setInterval(letter_flip);
       letter_flip = setInterval(function() {  //letter flipping
         flip_starttime = Date.now();
         flip_letter();
@@ -308,9 +305,9 @@ function end_game() {
   state = {
     letter_bank: [],
     players: {},
+    active_players: {}
   };
   approval = {};
-  active_players = {};
   id_to_player = {};
   busy = false;
   letters_rem = tiles_list.slice();
@@ -329,7 +326,7 @@ function steal_approval(p_from, p_to, old_word, new_word) {
     var apprv = "";
     var disapprv = "";
     for (player in approval) {
-      if (player != p_to && active_players[player]==true) {
+      if (player != p_to && focused_players[player]==true) {
         if (approval[player] == null){
           all_approve = false;
           all_disapprove = false;
@@ -364,7 +361,7 @@ function steal_approval(p_from, p_to, old_word, new_word) {
     }
     else if (all_disapprove == true){
       clearInterval(x);
-      io.sockets.emit('verdict',"all active players disapproved");
+      io.sockets.emit('verdict',"all active players disapproved"); //really, focused players
       end_steal();
     }
     else if (i==5 || (i>1 && i%10==0 && i<60)) {
