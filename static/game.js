@@ -167,19 +167,21 @@ $(document).ready(function() {
 	});
 
 	socket.on('approval',function(data){
-		$("#logbox").append(
-			"<p class='msg'>" + data["msg"] + "</p>");
-		$('#logbox').scrollTop($('#logbox')[0].scrollHeight*4);
 		if (data["p_to"]!=id){
 			$("#approval").show(1000);			
 		}
+		$("#logbox").append(
+			"<p class='msg'>" + data["msg"] + "</p>");
+		$('#logbox').scrollTop($('#logbox')[0].scrollHeight*4);
+
 	});
 
 	socket.on('verdict',function(msg){
+		$("#approval").hide(1000);
 		$("#logbox").append(
 			"<p class='msg'>" + msg + "</p>");
 		$('#logbox').scrollTop($('#logbox')[0].scrollHeight);
-		$("#approval").hide(1000);
+
 	});
 
 
