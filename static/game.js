@@ -1,26 +1,13 @@
 var socket = io();
 var id="";
 var active;
-var stealing=false;
 var player_from;
 var steal_word;
+var focus;
 
 function new_word() {
 	$(".word").css("border","none");
 	active = null;
-	$("#submission").focus();
-	stealing=false;
-}
-
-function Stealing(word) {
-	stealing=true;
-	var word_obj = $("#"+word);
-	active = word;
-	$(".word").css("border","none");
-	word_obj.css("border", "2px solid white");
-	word_obj.css("border-radius","4px");
-	player_from = word_obj.parent().attr("id");
-	steal_word = word;
 	$("#submission").focus();
 }
 
@@ -49,21 +36,7 @@ $(document).ready(function() {
 	$("#submit").click(function(){ //submit a word
 		var word = $("#submission").val();
 		$("#submission").val("");
-		// if (stealing == false) {
-		// 	package = {"word":word,"id":id};
-		// 	// socket.emit('word_submit',package);
-		// 	socket.emit('word_submit',word);
-		// } else { //stealing a word
-		// 	package = {
-		// 		"new_word":word,
-		// 		"steal_word":steal_word,
-		// 		"player_from":player_from,
-		// 		"player_to":id};
-		// 	socket.emit('steal',package);
-		// 	socket.emit('hey');
-		// }
 		socket.emit('word_submit',word);
-		stealing=false;
 		active=null;
 		player_from=null;
 		steal_word=null;
@@ -126,7 +99,7 @@ $(document).ready(function() {
 					word_HTML += "<p class = 'letter'>" + letter + "</p>";
 				}
 				$("#"+player).append(
-					"<button class = 'word px-0' onclick = 'Stealing("+'"'+word+'"'+")' id = '" + word + "'>" + word_HTML + "</button>");
+					"<button class = 'word px-0' id = '" + word + "'>" + word_HTML + "</button>");
 			}
 		}
 		//update letter bank
@@ -139,13 +112,13 @@ $(document).ready(function() {
 			$("#"+active).css("border", "2px solid white");
 			$("#"+active).css("border-radius","4px");
 		}
-		//fix the height of the log
-		// var log = $("#log");
-		// var msgs = log.html();
-		// log.html("");
-		// var height=$("#letter-bank").innerHeight();
-		// $("#log").css("max-height",height);
-		// $("#log").html(msgs);
+		//check if doc in focus
+		if (document.hasFocus()) {
+			focus = true;
+		} else {
+			focus = false;
+		}
+		socket.emit('focus',focus);
 	});
 
 	socket.on('msg',function(msg) {
