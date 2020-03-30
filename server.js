@@ -45,6 +45,7 @@ let focused_players = {};
 let id_to_player = {};
 let busy = false;
 let word_queue = [];
+let stealing;
 let flip_starttime;
 let flip_pausetime;
 let letter_flip;
@@ -113,7 +114,11 @@ io.on('connection', function(socket) {
   socket.on('word_submit', async function(sent_word) {
     var word = sent_word.toUpperCase();
     if (busy) {
-      word_queue.push([word,socket]);
+      if (!stealing) {
+        word_queue.push([word,socket]);
+      } else {
+        socket.emit('alert',"stealing in process");
+      }
       return;
     } else {
       busy = true;
@@ -135,6 +140,7 @@ io.on('connection', function(socket) {
       end_word();
       return;
     } else {
+      stealing = true;
       for (pair of word_queue) {
         pair[1].emit('alert',"stealing in process");
       }
@@ -188,6 +194,7 @@ function end_steal() {
   busy = false;
   null_approval();
   play_flip();
+  stealing = false;
   refresh();
 }
 
