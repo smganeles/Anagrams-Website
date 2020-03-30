@@ -32,7 +32,7 @@ app.get('/restart', function(req,res){
 
 //////////////////////////////////////////
 
-let wordset = new Set(fs.readFileSync(path.join(__dirname,'static/wordlist.txt'),'utf8').split("\r\n"));
+let wordset = new Set(fs.readFileSync(path.join(__dirname,'static/wordlist.txt'),'utf8').split("\n"));
 //only works non-locally (local split is "\r\n")
 // .replace("\r\n","\n")  ---not working 
 
