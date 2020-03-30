@@ -169,7 +169,7 @@ io.on('connection', function(socket) {
       return;
     } else {
       for (pair of word_queue) {
-        pair[0].emit('alert',"stealing in process");
+        pair[1].emit('alert',"stealing in process");
       }
       word_queue = [];
     }
@@ -252,7 +252,6 @@ function play_flip() {
 }
 
 function flip_letter(num_remain) {
-  console.log(tiles_list);
   var num_remain = letters_rem.length;
   if (num_remain>0) {
     var rand_idx = Math.floor(Math.random()*num_remain);
