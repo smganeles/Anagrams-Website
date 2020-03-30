@@ -93,10 +93,12 @@ $(document).ready(function() {
 
 	$("#approve").click(function(){
 		socket.emit('approve',id);
+		$("#submission").focus();
 	});
 
 	$("#disapprove").click(function(){
 		socket.emit('disapprove',id);
+		$("#submission").focus();
 	});
 
 
@@ -149,25 +151,25 @@ $(document).ready(function() {
 	socket.on('msg',function(msg) {
 		$("#logbox").append(
 			"<p class='msg'>" + msg + "</p>");
-		$('#logbox').scrollTop($('#logbox')[0].scrollHeight);
+		$('#logbox').scrollTop($('#logbox')[0].scrollHeight*4);
 	});
 
 	socket.on('alert',function(alert) {
 		$("#logbox").append(
 			"<p class='msg alrt'>" + alert + "</p>");
-		$('#logbox').scrollTop($('#logbox')[0].scrollHeight);
+		$('#logbox').scrollTop($('#logbox')[0].scrollHeight*4);
 	});
 
 	socket.on('chat',function(msg) {
 		$("#chatbox").append(
 			"<p class='chat'>" + msg + "</p>");
-		$('#chatbox').scrollTop($('#chatbox')[0].scrollHeight);
+		$('#chatbox').scrollTop($('#chatbox')[0].scrollHeight*4);
 	});
 
 	socket.on('approval',function(data){
 		$("#logbox").append(
 			"<p class='msg'>" + data["msg"] + "</p>");
-		$('#logbox').scrollTop($('#logbox')[0].scrollHeight);
+		$('#logbox').scrollTop($('#logbox')[0].scrollHeight*4);
 		if (data["p_to"]!=id){
 			$("#approval").show(1000);			
 		}
