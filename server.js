@@ -4,7 +4,7 @@ var path = require('path');
 var socketIO = require('socket.io');
 var unirest = require('unirest');
 var fs = require('fs');
-var clonedeep = require('lodash/clonedeep');
+// var clonedeep = require('lodash');
 
 var app = express();
 var server = http.Server(app);
@@ -314,7 +314,7 @@ function end_game() {
   active_players = {};
   id_to_player = {};
   busy = false;
-  letters_rem = clonedeep(tiles_list);
+  letters_rem = tiles_list.slice();
 }
 
 function steal_approval(p_from, p_to, old_word, new_word) {
