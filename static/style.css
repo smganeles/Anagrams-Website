@@ -10,19 +10,19 @@ body {
 	justify-content: space-between;
 }
 
-#big{
+#big-box{
 	display:flex;
 	flex-grow: 1;
 }
 
-#game {
+#game-box {
 	display: flex;
 	flex-direction: column;
 	padding-left:0;
 	padding-right:0;
 }
 
-#sidebar {
+#right-sidebar {
 	max-width:230px;
 	display: flex;
 	flex-direction: column;
@@ -30,7 +30,7 @@ body {
 	padding-right:0;
 }
 
-#chat {
+#chat-container {
 	background-color: #d9e7ff;
 	flex-grow:1;
 	/*border: 2px solid white;*/
@@ -40,14 +40,14 @@ body {
 
 }
 
-#chatbox {
+#chat-box {
 	flex-grow:1;
 /*	display: flex;
 	flex-direction: column;*/
 	overflow-y:auto;
 }
 
-#log {
+#log-container {
 	flex-grow:1;
 	border-radius: 15px;
 	padding-top: 10px;
@@ -58,11 +58,11 @@ body {
 	justify-content: flex-end;
 }
 
-#logbox {
+#log-box {
 	overflow-y:auto;
 }
 
-#approval {
+#approval-box {
 	display: flex;
 	flex-direction: row;
 	justify-content: space-around;
