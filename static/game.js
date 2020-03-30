@@ -25,8 +25,7 @@ $(document).ready(function() {
 			$("#login_back").hide();
 		};
 	});
-
-	$("#nameInput").on("keyup", function(event) { //submit word when press enter
+	$("#nameInput").on("keyup", function(event) { //submit name when press enter
   		if (event.keyCode === 13) { 
 		    event.preventDefault();
 		    $("#player_join").click();
@@ -41,7 +40,6 @@ $(document).ready(function() {
 		player_from=null;
 		steal_word=null;
 	});
-
 	$("#submission").on("keyup", function(event) { //submit word when press enter
   		if (event.keyCode === 13) { 
 		    // Cancel the default action, if needed
@@ -56,8 +54,7 @@ $(document).ready(function() {
 		socket.emit('chat_upld',data);
 		$("#chat_msg").val("");
 	});
-
-	$("#chat_msg").on("keyup", function(event) { //submit word when press enter
+	$("#chat_msg").on("keyup", function(event) { //submit chat when press enter
   		if (event.keyCode === 13) { 
 		    event.preventDefault();
 		    $("#chat_sbmt").click();
@@ -146,15 +143,13 @@ $(document).ready(function() {
 		$("#logbox").append(
 			"<p class='msg'>" + data["msg"] + "</p>");
 		$('#logbox').scrollTop($('#logbox')[0].scrollHeight*4);
-
 	});
 
 	socket.on('verdict',function(msg){
 		$("#approval").hide(1000);
 		$("#logbox").append(
 			"<p class='msg'>" + msg + "</p>");
-		$('#logbox').scrollTop($('#logbox')[0].scrollHeight);
-
+		$('#logbox').scrollTop($('#logbox')[0].scrollHeight*4);
 	});
 
 
