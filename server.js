@@ -4,6 +4,7 @@ var path = require('path');
 var socketIO = require('socket.io');
 var unirest = require('unirest');
 var fs = require('fs');
+var clonedeep = require('lodash/clonedeep');
 
 var app = express();
 var server = http.Server(app);
@@ -31,39 +32,40 @@ app.get('/restart', function(req,res){
 
 //////////////////////////////////////////
 
-let wordset = new Set(fs.readFileSync(path.join(__dirname,'static/wordlist.txt'),'utf8').split("\n"));
+let wordset = new Set(fs.readFileSync(path.join(__dirname,'static/wordlist.txt'),'utf8').split("\r\n"));
 //only works non-locally (local split is "\r\n")
 // .replace("\r\n","\n")  ---not working 
 
-let letters_rem = [
-  "A","A","A","A","A","A","A","A","A","A","A","A","A",
-  "B","B","B",
-  "C","C","C",
-  "D","D","D","D","D","D",
-  "E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E",
-  "F","F","F",
-  "G","G","G","G",
-  "H","H","H",
-  "I","I","I","I","I","I","I","I","I","I","I","I",
-  "J","J",
-  "K","K",
-  "L","L","L","L","L",
-  "M","M","M",
-  "N","N","N","N","N","N","N","N",
-  "O","O","O","O","O","O","O","O","O","O","O",
-  "P","P","P","P",
-  "Q","Q",
-  "R","R","R","R","R","R","R","R","R",
-  "S","S","S","S","S","S",
-  "T","T","T","T","T","T","T","T","T",
-  "U","U","U","U","U","U",
-  "V","V","V",
-  "W","W","W",
-  "X","X",
-  "Y","Y","Y",
-  "Z","Z"];
+// let letters_rem = [
+//   "A","A","A","A","A","A","A","A","A","A","A","A","A",
+//   "B","B","B",
+//   "C","C","C",
+//   "D","D","D","D","D","D",
+//   "E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E","E",
+//   "F","F","F",
+//   "G","G","G","G",
+//   "H","H","H",
+//   "I","I","I","I","I","I","I","I","I","I","I","I",
+//   "J","J",
+//   "K","K",
+//   "L","L","L","L","L",
+//   "M","M","M",
+//   "N","N","N","N","N","N","N","N",
+//   "O","O","O","O","O","O","O","O","O","O","O",
+//   "P","P","P","P",
+//   "Q","Q",
+//   "R","R","R","R","R","R","R","R","R",
+//   "S","S","S","S","S","S",
+//   "T","T","T","T","T","T","T","T","T",
+//   "U","U","U","U","U","U",
+//   "V","V","V",
+//   "W","W","W",
+//   "X","X",
+//   "Y","Y","Y",
+//   "Z","Z"];
 
-const letters_copy = letters_rem.slice();
+let letters_rem = fs.readFileSync(path.join(__dirname,'static/letters.txt'),'utf8').split(",");
+const tiles_list = fs.readFileSync(path.join(__dirname,'static/letters.txt'),'utf8').split(",");
 let flip_timer = 8000;
 let state = {
   letter_bank: [],
@@ -73,11 +75,16 @@ let approval = {};
 let active_players = {};
 let id_to_player = {};
 let busy = false;
-let letter_flip = false;
 let word_queue = [];
 let chosen;
 let flip_starttime;
 let flip_pausetime;
+// let letter_flip = false;
+let letter_flip;
+let single_flip;
+let flipping = false;
+
+
 
 //////////////////////////////////////////
 
@@ -96,6 +103,7 @@ io.on('connection', function(socket) {
   });
 
   socket.on('chat_upld',function(data){
+
     var sender;
     var msg;
     for (key in data) {
@@ -213,19 +221,25 @@ function end_steal() {
 }
 
 function pause_flip() {
-  if (letter_flip) {
+  if (flipping) {
     flip_pausetime = Date.now();
   }
+  clearTimeout(single_flip);
   clearInterval(letter_flip);
-  letter_flip = false;
+  flipping = false;
+  //if its still in the timeout below, letter_flip hasn't started yet and therefore clearing it wont do anyting (break it??)
+  //but single_flip is still running so both must be stopped
 }
 
 function play_flip() {
-  if (!letter_flip) { //otherwise mutiple calls will mess up "remaining"
-    clearInterval(letter_flip);
+  if (!flipping) { //otherwise mutiple calls will mess up "remaining"
+    // clearInterval(letter_flip); //MIGHT NOT NEED THIS LINE
+    flipping = true;
     remaining = flip_timer - (flip_pausetime - flip_starttime);
-    setTimeout(function() {
+    single_flip = setTimeout(function() {
+      flip_starttime = Date.now();
       flip_letter();
+      // setInterval(letter_flip);
       letter_flip = setInterval(function() {  //letter flipping
         flip_starttime = Date.now();
         flip_letter();
@@ -238,8 +252,9 @@ function play_flip() {
 }
 
 function flip_letter(num_remain) {
+  console.log(tiles_list);
   var num_remain = letters_rem.length;
-    if (num_remain>0) {
+  if (num_remain>0) {
     var rand_idx = Math.floor(Math.random()*num_remain);
     var letter = letters_rem[rand_idx];
     letters_rem.splice(rand_idx,1);
@@ -299,7 +314,7 @@ function end_game() {
   active_players = {};
   id_to_player = {};
   busy = false;
-  letters_rem = letters_copy;
+  letters_rem = clonedeep(tiles_list);
 }
 
 function steal_approval(p_from, p_to, old_word, new_word) {
