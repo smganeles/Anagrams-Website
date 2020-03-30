@@ -13,7 +13,7 @@ function new_word() {
 
 $(document).ready(function() {
 
-	$("#approval").hide();
+	$("#approval-box").hide();
 
 	$("#player_join").click(function(){
 		var name = $("#nameInput").val().trim();
@@ -119,37 +119,37 @@ $(document).ready(function() {
 	});
 
 	socket.on('msg',function(msg) {
-		$("#logbox").append(
+		$("#log-box").append(
 			"<p class='msg'>" + msg + "</p>");
-		$('#logbox').scrollTop($('#logbox')[0].scrollHeight*4);
+		$('#log-box').scrollTop($('#log-box')[0].scrollHeight*4);
 	});
 
 	socket.on('alert',function(alert) {
-		$("#logbox").append(
+		$("#log-box").append(
 			"<p class='msg alrt'>" + alert + "</p>");
-		$('#logbox').scrollTop($('#logbox')[0].scrollHeight*4);
+		$('#log-box').scrollTop($('#log-box')[0].scrollHeight*4);
 	});
 
 	socket.on('chat',function(msg) {
-		$("#chatbox").append(
+		$("#chat-box").append(
 			"<p class='chat'>" + msg + "</p>");
-		$('#chatbox').scrollTop($('#chatbox')[0].scrollHeight*4);
+		$('#chat-box').scrollTop($('#chat-box')[0].scrollHeight*4);
 	});
 
 	socket.on('approval',function(data){
 		if (data["p_to"]!=id){
-			$("#approval").show(1000);			
+			$("#approval-box").show(1000);			
 		}
-		$("#logbox").append(
+		$("#log-box").append(
 			"<p class='msg'>" + data["msg"] + "</p>");
-		$('#logbox').scrollTop($('#logbox')[0].scrollHeight*4);
+		$('#log-box').scrollTop($('#log-box')[0].scrollHeight*4);
 	});
 
 	socket.on('verdict',function(msg){
-		$("#approval").hide(1000);
-		$("#logbox").append(
+		$("#approval-box").hide(1000);
+		$("#log-box").append(
 			"<p class='msg'>" + msg + "</p>");
-		$('#logbox').scrollTop($('#logbox')[0].scrollHeight*4);
+		$('#log-box').scrollTop($('#log-box')[0].scrollHeight*4);
 	});
 
 
