@@ -4,6 +4,8 @@ var active;
 var player_from;
 var steal_word;
 var focus;
+var typing = false;
+var prev_length;
 
 function new_word() {
 	$(".word").css("border","none");
@@ -15,6 +17,7 @@ $(document).ready(function() {
 
 	$("#approval-box").hide();
 
+	//Player joining
 	$("#player_join").click(function(){
 		var name = $("#nameInput").val().trim();
 		if (name.includes(" ")) {
@@ -32,10 +35,11 @@ $(document).ready(function() {
 		}
 	});
 
-	$("#submit").click(function(){ //submit a word
+	//Submitting a word
+	$("#submit").click(function(){ 
 		var word = $("#submission").val();
 		$("#submission").val("");
-		socket.emit('word_submit',word);
+		socket.emit('word_submit_v2',word);
 		active=null;
 		player_from=null;
 		steal_word=null;
@@ -48,6 +52,7 @@ $(document).ready(function() {
 		}
 	});
 
+	//submitting a chat message
 	$("#chat_sbmt").click(function(){
 		var data = {};
 		data[id] = $("#chat_msg").val();
@@ -71,6 +76,19 @@ $(document).ready(function() {
 		$("#submission").focus();
 	});
 
+	//elans function
+	$("#submission").on('input',function(){
+		if ($(this).val().length==2) {
+			if (prev_length==1){
+				typing = true;	
+				socket.emit('add_to_queue');
+			} else {
+				typing = false;
+				socket.emit('remove_from_queue');
+			}
+		}
+		prev_length = $(this).val().length;
+	});
 
 
 	//update the html
