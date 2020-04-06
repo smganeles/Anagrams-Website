@@ -76,25 +76,28 @@ $(document).ready(function() {
 		$("#submission").focus();
 	});
 
-	//elans function
-	$("#submission").on('input',function(){
-		if ($(this).val().length==2) {
-			if (prev_length==1){
-				typing = true;	
-				socket.emit('add_to_queue');
-			} else {
-				typing = false;
-				socket.emit('remove_from_queue');
-			}
-		}
-		prev_length = $(this).val().length;
-	});
+	// //elans function
+	// $("#submission").on('input',function(){
+	// 	if ($(this).val().length==2) {
+	// 		if (prev_length==1){
+	// 			typing = true;	
+	// 			socket.emit('add_to_queue');
+	// 		}
+	// 	} else if ($(this).val().length==1) {
+	// 		if (prev_length==2) {
+	// 			typing = false;
+	// 			socket.emit('remove_from_queue');
+	// 		}
+	// 	}
+	// 	prev_length = $(this).val().length;
+	// });
 
 
 	//update the html
 	socket.on('state', function(state) {
 		//update words
 		$("#top-row").html("");
+		// $("#bottom-row").html("<div class = 'col-2 bg-secondary mr-3 pt-2' id='typing_queue'></div>"); //ELAN
 		$("#bottom-row").html("");
 		for (player in state["players"]) {
 			if (player!=id) {
@@ -169,6 +172,15 @@ $(document).ready(function() {
 			"<p class='msg'>" + msg + "</p>");
 		$('#log-box').scrollTop($('#log-box')[0].scrollHeight*4);
 	});
+
+
+	// socket.on('queue_refresh',function(obj){
+	// 	$("#typing_queue").html("");
+	// 	for (name of obj["queue"]) {
+	// 		$("#typing_queue").append(
+	// 			"<p class='msg'>" + name + "</p>");
+	// 	}
+	// });
 
 
 

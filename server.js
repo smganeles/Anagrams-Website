@@ -70,6 +70,12 @@ io.on('connection', function(socket) {
     state["active_players"][name] = true;
     approval[name] = null;
     id_to_player[socket.id]=name;
+    if (stealing) {
+      socket.emit('approval', {
+      "p_to": "unsure"
+      "msg": "stealing in process now"
+      });
+    }
     refresh();
   });
 
@@ -93,7 +99,6 @@ io.on('connection', function(socket) {
       play_flip();
     }
     io.sockets.emit('chat',sender + ": " + msg);
-    // io.sockets.emit('msg',"wordset size"+wordset.size);
   });
 
   socket.on('approve', function(id){ 
@@ -107,41 +112,11 @@ io.on('connection', function(socket) {
 
   socket.on('disconnect', function(){
     state["active_players"][id_to_player[socket.id]] = false;
+    delete approval[id_to_player[socket.id]];
     delete id_to_player[socket.id];
     if (isEmpty(id_to_player)) {
       end_game();
     }
-  });
-
-  //elans model:
-  socket.on('word_submit_v2', async function(sent_word){
-    for (const [socket_2,timer] of typing_queue) {
-      if (socket==socket_2) {
-        clearInterval(timer);
-      }
-    }
-    var word = sent_word.toUpperCase();
-    if (stealing) {
-      socket.emit("alert","stealing in process");
-      end_word_v2(socket);
-      return;
-      // if (!typing_queue.includes(socket)) {
-      //   socket.emit('alert',"stealing in process")
-      // }
-    }
-    if (word.length<3) {
-      socket.emit('alert',"word must be 3 letters or longer");
-      end_word_v2(socket);
-      return;
-    }
-    let x = await is_word(word);
-    if (!x) { //not in dictionary
-      socket.emit('alert',"not a valid word");
-      end_word_v2(socket);
-      return;
-    }
-    submit_map.set(socket,word);
-    run_queue();
   });
 
   socket.on('word_submit', async function(sent_word) {
@@ -191,49 +166,111 @@ io.on('connection', function(socket) {
       p_from = x[key];
     }
     // }
-    steal_approval(p_from,p_to,old_word,word,socket);
+    steal_approval(p_from,p_to,old_word,word,socket.id);
   });
 
-  socket.on('chosen',function(word){
-    chosen = word;
-  });
+  // //ELAN
+  // socket.on('word_submit_v2', async function(sent_word){
+  //   for (const [socket_id,timer] of typing_queue) {
+  //     if (socket.id==socket_id) {
+  //       clearInterval(timer);
+  //     }
+  //   }
+  //   var word = sent_word.toUpperCase();
+  //   if (stealing) {
+  //     socket.emit("alert","stealing in process");
+  //     rmv_from_queue(socket.id);
+  //     return;
+  //     // if (!typing_queue.includes(socket)) {
+  //     //   socket.emit('alert',"stealing in process")
+  //     // }
+  //   }
+  //   if (word.length<3) {
+  //     socket.emit('alert',"word must be 3 letters or longer");
+  //     rmv_from_queue(socket.id);
+  //     return;
+  //   }
+  //   let x = await is_word(word);
+  //   if (!x) { //not in dictionary
+  //     socket.emit('alert',"not a valid word");
+  //     rmv_from_queue(socket.id);
+  //     return;
+  //   }
+  //   submit_map.set(socket.id,word);
+  //   run_queue();
+  // });
 
-  socket.on('focus',function(bool){
-    focused_players[id_to_player[socket.id]] = bool;
-  });
+  // socket.on('chosen',function(word){
+  //   chosen = word;
+  // });
 
-  socket.on('add_to_queue',function(){
-    let on_queue = false;
-    for (const [socket_2,timer] of typing_queue) {
-      if (socket==socket_2) {
-        on_queue = true;
-      }
-    }
-    if (stealing) {
-      socket.emit("alert","stealing in process");
-      return;
-    }
-    else if (!on_queue){
-      var x = setInterval(function(){
-        //Method: delete item where it is, move it to end of list
-        typing_queue = typing_queue.filter(function(item){
-          return item[0] !== socket;
-        });
-        socket.emit("alert","took too long to type, moved to end of queue");
-        typing_queue.push([socket,x]);
-      },3000);
-      typing_queue.push([socket,x]);
-    } 
-    else {
-      socket.emit('alert',"already submitted word");
-    }
-  });
+  // socket.on('focus',function(bool){
+  //   focused_players[id_to_player[socket.id]] = bool;
+  // });
 
-  socket.on('remove_from_queue',function(){
-    typing_queue = typing_queue.filter(function(item){
-      return item[0] !== socket;
-    });
-  });
+  // //ELAN
+  // socket.on('add_to_queue',function(){
+  //   console.log(typing_queue);
+  //   let on_queue = false;
+  //   for (const [socket_id,timer] of typing_queue) {
+  //     if (socket.id==socket_id) {
+  //       on_queue = true;
+  //     }
+  //   }
+  //   if (stealing) {
+  //     socket.emit("alert","stealing in process");
+  //     return;
+  //   }
+  //   else if (!on_queue){
+  //     var x = setInterval(function(){
+  //       //Method: delete item where it is, move it to end of list
+  //       // typing_queue = typing_queue.filter(function(item){
+  //       //   return item[0] !== socket.id;
+  //       // });
+  //       // typing_queue.push([socket.id,x]);
+  //       // socket.emit("alert","took too long to type, moved to end of queue");
+  //       //this method might allow too much time between destroy and replace
+        
+  //       //Method 2:
+  //       let index;
+  //       for (var i=0; i<typing_queue.length; i++) {
+  //         if (typing_queue[i][0]==socket.id) {
+  //           index = i;
+  //         }
+  //       }
+  //       //will have error here if not on queue but timer still going
+  //       typing_queue.push(typing_queue.splice(index,1)[0]);
+  //       socket.emit("alert","took too long to type, moved to end of queue");
+  //       emit_queue();
+  //     },3000);
+  //     typing_queue.push([socket.id,x]);
+  //     emit_queue();
+  //   } 
+  //   else {
+  //     socket.emit('alert',"already submitted word");
+  //   }
+  // });
+
+  // //ELAN
+  // socket.on('remove_from_queue',function(){
+  //   for (const [socket_id,timer] of typing_queue) {
+  //     if (socket.id==socket_id) {
+  //       clearInterval(timer);
+  //     }
+  //   }
+  //   rmv_from_queue(socket.id);
+
+  //   // let index;
+  //   // for (var i=0; i<typing_queue.length; i++) {
+  //   //   if (typing_queue[i][0]==socket.id) {
+  //   //     index = i;
+  //   //   }
+  //   // }
+  //   // clearInterval(typing_queue[index][1]);
+  //   // typing_queue.splice(index,1);
+  //   // emit_queue();
+
+  // });
 
 });
 
@@ -257,10 +294,20 @@ function end_word() {
   play_flip();
 }
 
-function end_word_v2(socket) {
+//ELAN
+function rmv_from_queue(socket_id) {
   typing_queue = typing_queue.filter(function(item){
-    return item[0] !== socket;
+    return item[0] !== socket_id;
   });
+  emit_queue();
+}
+
+function emit_queue() {
+  let queue = [];
+  for (const [socket_id,timer] of typing_queue){
+    queue.push(id_to_player[socket_id]);
+  }
+  io.sockets.emit('queue_refresh',{"queue":queue});
 }
 
 function end_steal() {
@@ -363,7 +410,7 @@ function end_game() {
   letters_rem = tiles_list.slice();
 }
 
-function steal_approval(p_from, p_to, old_word, new_word, socket) {
+function steal_approval(p_from, p_to, old_word, new_word, socket_id) {
   io.sockets.emit('approval',{
     "p_to": p_to,
     "msg": p_to +" wants to steal "+new_word+" from "+old_word+" ("+p_from+")"
@@ -408,13 +455,13 @@ function steal_approval(p_from, p_to, old_word, new_word, socket) {
       state["players"][p_from].splice(index,1);
       io.sockets.emit('verdict',p_to+" steals "+new_word+" from "+old_word+" ("+p_from+")");
       end_steal();
-      end_word_v2(socket);
+      rmv_from_queue(socket_id);
     }
     else if (all_disapprove == true){
       clearInterval(x);
       io.sockets.emit('verdict',"all active players disapproved"); //really, focused players
       end_steal();
-      end_word_v2(socket);
+      rmv_from_queue(socket_id);
     }
     else if (i==5 || (i>1 && i%10==0 && i<60)) {
       var waiting = "Waiting for Unanimous Decision</p> <p class='msg'>&ensp; Approves:"+apprv+"</p><p class='msg'>&ensp; Disapproves:"+disapprv;
@@ -424,7 +471,7 @@ function steal_approval(p_from, p_to, old_word, new_word, socket) {
       clearInterval(x);
       io.sockets.emit('verdict',"Took too long, moving on")
       end_steal();
-      end_word_v2(socket);
+      rmv_from_queue(socket_id);
     }
   }, 1000);
 }
@@ -510,16 +557,19 @@ function which_word(obj,socket) {
 //   return new Promise(resolve => setTimeout(resolve, ms));
 // }
 
+
+//ELAN
 function run_queue () {
-  console.log(typing_queue);
   if (submit_map.has(typing_queue[0][0]) && !stealing && !running_queue) {
-    var socket = typing_queue[0][0];
-    var word = submit_map.get(socket);
+    var socket_id = typing_queue[0][0];
+    var word = submit_map.get(socket_id);
     running_queue = true;
+    let socket = io.of(null || "/").connected[socket_id];
     x = word_submit(word,socket);
     if (!x) { //word from bank
       typing_queue.shift();
-      submit_map.delete(socket);
+      emit_queue();
+      submit_map.delete(socket_id);
       running_queue = false;
       if (typing_queue.length > 0) {
         run_queue();
@@ -527,9 +577,16 @@ function run_queue () {
       return;
     } else {
       stealing = true;
+      
+      //clear queue and list!
+      for (const [socket_id,timer] of typing_queue) {
+        clearInterval(timer);
+      }
       typing_queue = [];
+      io.sockets.emit('queue_refresh',{"queue":[]});
       submit_map = new Map();
-      let p_to = id_to_player[socket.id];
+
+      let p_to = id_to_player[socket_id];
       let p_from;
       let old_word;
       // if (Object.keys(x).length>1) {
@@ -542,15 +599,10 @@ function run_queue () {
       }
       // }
       pause_flip();
-      steal_approval(p_from,p_to,old_word,word,socket);
+      steal_approval(p_from,p_to,old_word,word,socket_id);
     }
   }
 }
-
-//play flip?
-//delete item from queue
-//delete item from map
-//delete queue if stealing true?
 
 
 
