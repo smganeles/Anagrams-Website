@@ -31,7 +31,7 @@ app.get('/restart', function(req,res){
 
 //////////////////////////////////////////
 
-let wordset = new Set(fs.readFileSync(path.join(__dirname,'static/wordlist.txt'),'utf8').split("\r\n"));
+let wordset = new Set(fs.readFileSync(path.join(__dirname,'static/wordlist.txt'),'utf8').split("\n"));
 let letters_rem = fs.readFileSync(path.join(__dirname,'static/letters.txt'),'utf8').split(",");
 const tiles_list = fs.readFileSync(path.join(__dirname,'static/letters.txt'),'utf8').split(",");
 let flip_timer = 8000;
@@ -72,7 +72,7 @@ io.on('connection', function(socket) {
     id_to_player[socket.id]=name;
     if (stealing) {
       socket.emit('approval', {
-      "p_to": "unsure"
+      "p_to": "unsure",
       "msg": "stealing in process now"
       });
     }
@@ -302,6 +302,7 @@ function rmv_from_queue(socket_id) {
   emit_queue();
 }
 
+//ELAN
 function emit_queue() {
   let queue = [];
   for (const [socket_id,timer] of typing_queue){

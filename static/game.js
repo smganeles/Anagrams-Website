@@ -39,7 +39,7 @@ $(document).ready(function() {
 	$("#submit").click(function(){ 
 		var word = $("#submission").val();
 		$("#submission").val("");
-		socket.emit('word_submit_v2',word);
+		socket.emit('word_submit',word); //ELAN: word_submit_v2
 		active=null;
 		player_from=null;
 		steal_word=null;
@@ -174,6 +174,7 @@ $(document).ready(function() {
 	});
 
 
+	//ELAN queue
 	// socket.on('queue_refresh',function(obj){
 	// 	$("#typing_queue").html("");
 	// 	for (name of obj["queue"]) {
