@@ -169,6 +169,14 @@ io.on('connection', function(socket) {
     steal_approval(p_from,p_to,old_word,word,socket.id);
   });
 
+  socket.on('chosen',function(word){
+    chosen = word;
+  });
+
+  socket.on('focus',function(bool){
+    focused_players[id_to_player[socket.id]] = bool;
+  });
+
   // //ELAN
   // socket.on('word_submit_v2', async function(sent_word){
   //   for (const [socket_id,timer] of typing_queue) {
@@ -198,14 +206,6 @@ io.on('connection', function(socket) {
   //   }
   //   submit_map.set(socket.id,word);
   //   run_queue();
-  // });
-
-  // socket.on('chosen',function(word){
-  //   chosen = word;
-  // });
-
-  // socket.on('focus',function(bool){
-  //   focused_players[id_to_player[socket.id]] = bool;
   // });
 
   // //ELAN
