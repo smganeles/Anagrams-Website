@@ -102,24 +102,24 @@ $(document).ready(function() {
 
 		//sort, most words first
 		// let players = {...state["players"]};
-		let players = Object.assign({}, state["players"]);
-		console.log(players);
-		let sorted_players = [];
-		for (i=0; i<Object.keys(players).length;i++) {
-			let max = -1;
-			let most_words;
-			for (player in players) {
-				let x = players[player].length;
-				if (x>max) {
-					max = x;
-					most_words = player;
-				}
-			}
-			sorted_players.push([most_words,players[most_words]]);
-			delete players[most_words];
-		}
-		// for (player in state["players"]) {
-		for (const [player,words] of sorted_players) {
+		// let players = Object.assign({}, state["players"]);
+		// console.log(players);
+		// let sorted_players = [];
+		// for (i=0; i<Object.keys(players).length;i++) {
+		// 	let max = -1;
+		// 	let most_words;
+		// 	for (player in players) {
+		// 		let x = players[player].length;
+		// 		if (x>max) {
+		// 			max = x;
+		// 			most_words = player;
+		// 		}
+		// 	}
+		// 	sorted_players.push([most_words,players[most_words]]);
+		// 	delete players[most_words];
+		// }
+		for (player in state["players"]) {
+		// for (const [player,words] of sorted_players) {
 			if (player!=id) {
 				$("#top-row").append(
 					"<div class = 'col word-bank' id = '" + player + "'></div>");
@@ -131,8 +131,8 @@ $(document).ready(function() {
 				$("#"+player).css("background-color","#ffa6a6");
 			}
 			$("#"+player).html("<h5>"+player+"</h5>"); //clear all words
-			// for (word of state["players"][player]) {  //redraw all words
-			for (word of words) {
+			for (word of state["players"][player]) {  //redraw all words
+			// for (word of words) {
 				var word_HTML = "";
 				for (letter of word) {
 					word_HTML += "<p class = 'letter'>" + letter + "</p>";
