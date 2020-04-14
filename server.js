@@ -38,14 +38,14 @@ let flip_timer = 8000;
 let state = {
   letter_bank: [],
   players: {},
-  active_players: {}
+  active_players: {},
+  focused_players: {}
 };
 let approval = {};
-let focused_players = {};
 let id_to_player = {};
 let busy = false;
 let word_queue = [];
-let stealing;
+let stealing = false;
 let flip_starttime;
 let flip_pausetime;
 let letter_flip;
@@ -55,28 +55,35 @@ let chosen;
 let typing_queue = [];
 let submit_map = new Map();
 let running_queue = false;
+let locked = false;
 
 
 //////////////////////////////////////////
 
 io.on('connection', function(socket) {
   socket.on('new_player', function(name) {
-    if (isEmpty(state["players"])) {
-      play_flip();
+    if (locked) {
+      socket.emit('locked');
+    } else {
+      socket.emit('not_locked',name);
+      if (isEmpty(state["players"])) {
+        play_flip();
+      }
+      if (!state["players"].hasOwnProperty(name)) {
+        state["players"][name] = [];
+      }
+      state["active_players"][name] = true;
+      state["focused_players"][name] = true;
+      approval[name] = null;
+      id_to_player[socket.id]=name;
+      if (stealing) {
+        socket.emit('approval', {
+        "p_to": "unsure",
+        "msg": "stealing in process now"
+        });
+      }
+      refresh();
     }
-    if (!state["players"].hasOwnProperty(name)) {
-      state["players"][name.replace(/"/g, '')] = [];
-    }
-    state["active_players"][name] = true;
-    approval[name] = null;
-    id_to_player[socket.id]=name;
-    if (stealing) {
-      socket.emit('approval', {
-      "p_to": "unsure",
-      "msg": "stealing in process now"
-      });
-    }
-    refresh();
   });
 
   socket.on('chat_upld',function(data){
@@ -98,6 +105,12 @@ io.on('connection', function(socket) {
     else if (msg.slice(0,5) == "PLAY") {
       play_flip();
     }
+    else if (msg.slice(0,5)=="LOCK") {
+      locked = true;
+    }
+    else if (msg.slice(0,7)=="UNLOCK"){
+      locked = false;
+    }
     io.sockets.emit('chat',sender + ": " + msg);
   });
 
@@ -111,6 +124,11 @@ io.on('connection', function(socket) {
   });
 
   socket.on('disconnect', function(){
+    if (id_to_player[socket.id] in state["players"]) {
+      if (state["players"][id_to_player[socket.id]].length==0){
+        delete state["players"][id_to_player[socket.id]];
+      }
+    }
     state["active_players"][id_to_player[socket.id]] = false;
     delete approval[id_to_player[socket.id]];
     delete id_to_player[socket.id];
@@ -174,7 +192,8 @@ io.on('connection', function(socket) {
   });
 
   socket.on('focus',function(bool){
-    focused_players[id_to_player[socket.id]] = bool;
+    state["focused_players"][id_to_player[socket.id]] = bool;
+    refresh();
   });
 
   // //ELAN
@@ -403,12 +422,15 @@ function end_game() {
   state = {
     letter_bank: [],
     players: {},
-    active_players: {}
+    active_players: {},
+    focused_players: {}
   };
   approval = {};
   id_to_player = {};
   busy = false;
   letters_rem = tiles_list.slice();
+  locked = false;
+  stealing = false;
 }
 
 function steal_approval(p_from, p_to, old_word, new_word, socket_id) {
@@ -424,7 +446,7 @@ function steal_approval(p_from, p_to, old_word, new_word, socket_id) {
     var apprv = "";
     var disapprv = "";
     for (player in approval) {
-      if (player != p_to && focused_players[player]==true) {
+      if (player != p_to && state["focused_players"][player]==true) {
         if (approval[player] == null){
           all_approve = false;
           all_disapprove = false;

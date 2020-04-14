@@ -20,12 +20,12 @@ $(document).ready(function() {
 	//Player joining
 	$("#player_join").click(function(){
 		var name = $("#nameInput").val().trim();
-		if (name.includes(" ")) {
-			$("#login_msg").html("No spaces allowed in Name")
+		var letters = /^[0-9a-zA-Z]+$/;
+		if (!name.match(letters) || name.includes(" ")) {
+			$("#login_msg").html("No symbols or spaces allowed in Name");
 		} else {
 			socket.emit('new_player',name);
-			id = name;
-			$("#login_back").hide();
+			// id = name;
 		};
 	});
 	$("#nameInput").on("keyup", function(event) { //submit name when press enter
@@ -100,26 +100,25 @@ $(document).ready(function() {
 		// $("#bottom-row").html("<div class = 'col-2 bg-secondary mr-3 pt-2' id='typing_queue'></div>"); //ELAN
 		$("#bottom-row").html("");
 
-		//sort, most words first
-		// let players = {...state["players"]};
-		// let players = Object.assign({}, state["players"]);
-		// console.log(players);
-		// let sorted_players = [];
-		// for (i=0; i<Object.keys(players).length;i++) {
-		// 	let max = -1;
-		// 	let most_words;
-		// 	for (player in players) {
-		// 		let x = players[player].length;
-		// 		if (x>max) {
-		// 			max = x;
-		// 			most_words = player;
-		// 		}
-		// 	}
-		// 	sorted_players.push([most_words,players[most_words]]);
-		// 	delete players[most_words];
-		// }
-		for (player in state["players"]) {
-		// for (const [player,words] of sorted_players) {
+		// sort, most words first
+		let players = state["players"];
+		let sorted_players = [];
+		let num_players = Object.keys(players).length;
+		for (i=0; i<num_players;i++) {
+			let max = -1;
+			let most_words;
+			for (player in players) {
+				let x = players[player].length;
+				if (x>max) {
+					max = x;
+					most_words = player;
+				}
+			}
+			sorted_players.push([most_words,players[most_words]]);
+			delete players[most_words];
+		}
+		// for (player in state["players"]) {
+		for (const [player,words] of sorted_players) {
 			if (player!=id) {
 				$("#top-row").append(
 					"<div class = 'col word-bank' id = '" + player + "'></div>");
@@ -128,11 +127,14 @@ $(document).ready(function() {
 					"<div class = 'col word-bank' id = '" + player + "'></div>");
 			}
 			if (!state["active_players"][player]) {
-				$("#"+player).css("background-color","#ffa6a6");
+				$("#"+player).css("background-color","#ffd1d1");
+			}
+			else if (!state["focused_players"][player]){
+				$("#"+player).css("background-color","#fff3d1");
 			}
 			$("#"+player).html("<h5>"+player+"</h5>"); //clear all words
-			for (word of state["players"][player]) {  //redraw all words
-			// for (word of words) {
+			// for (word of state["players"][player]) {  //redraw all words
+			for (word of words) {
 				var word_HTML = "";
 				for (letter of word) {
 					word_HTML += "<p class = 'letter'>" + letter + "</p>";
@@ -151,13 +153,12 @@ $(document).ready(function() {
 			$("#"+active).css("border", "2px solid white");
 			$("#"+active).css("border-radius","4px");
 		}
-		//check if doc in focus
-		if (document.hasFocus()) {
-			focus = true;
-		} else {
-			focus = false;
+		//check if focus changes
+		if (document.hasFocus() && state["focused_players"][id]==false) {
+			socket.emit('focus',true);
+		} else if (!document.hasFocus() && state["focused_players"][id]==true) {
+			socket.emit('focus',false);
 		}
-		socket.emit('focus',focus);
 	});
 
 	socket.on('msg',function(msg) {
@@ -192,6 +193,16 @@ $(document).ready(function() {
 		$("#log-box").append(
 			"<p class='msg'>" + msg + "</p>");
 		$('#log-box').scrollTop($('#log-box')[0].scrollHeight*4);
+	});
+
+	socket.on('locked', function() {
+		$("#login_msg").html("Game is currently locked");
+	});
+
+	socket.on('not_locked', function(name) {
+		$("#login_back").hide();
+		// console.log("not locked");
+		id = name;
 	});
 
 
