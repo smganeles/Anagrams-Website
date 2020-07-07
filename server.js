@@ -47,7 +47,7 @@ app.get('/restart', function(req,res){
 
 //////////////////////////////////////////
 
-const wordset = new Set(fs.readFileSync(path.join(__dirname,'static/wordlist.txt'),'utf8').split("\r\n"));
+const wordset = new Set(fs.readFileSync(path.join(__dirname,'static/wordlist.txt'),'utf8').split("\n")); //\r\n for local, \n for heroku
 const tiles_list = fs.readFileSync(path.join(__dirname,'static/letters.txt'),'utf8').split(",");
 
 let games = {}
