@@ -1,21 +1,27 @@
 var socket = io();
 var id="";
-var active;
 var player_from;
 var steal_word;
-var focus;
+var focus = true;
 var typing = false;
-var prev_length;
+var prev_word = "  ";
+var queue = [];
 
 function new_word() {
 	$(".word").css("border","none");
-	active = null;
 	$("#submission").focus();
 }
 
 $(document).ready(function() {
 
 	$("#approval-box").hide();
+
+	$(document).click(function(){
+		if (!focus) {
+			socket.emit('focus',true);
+			focus==true;
+		}
+	});
 
 	//Player joining
 	$("#player_join").click(function(){
@@ -29,7 +35,7 @@ $(document).ready(function() {
 		};
 	});
 	$("#nameInput").on("keyup", function(event) { //submit name when press enter
-  		if (event.keyCode === 13) { 
+  		if (event.keyCode === 13) {
 		    event.preventDefault();
 		    $("#player_join").click();
 		}
@@ -39,8 +45,8 @@ $(document).ready(function() {
 	$("#submit").click(function(){ 
 		var word = $("#submission").val();
 		$("#submission").val("");
-		socket.emit('word_submit',word); //ELAN: word_submit_v2
-		active=null;
+		socket.emit('word_submit_v2',word); //ELAN: word_submit_v2
+		prev_word = "   ";
 		player_from=null;
 		steal_word=null;
 	});
@@ -50,6 +56,9 @@ $(document).ready(function() {
 		    event.preventDefault();
 		    $("#submit").click();
 		}
+	});
+	$("#submission").on("paste",function(event){
+		event.preventDefault();
 	});
 
 	//submitting a chat message
@@ -76,30 +85,34 @@ $(document).ready(function() {
 		$("#submission").focus();
 	});
 
-	// //elans function
+	// //ELAN
 	// $("#submission").on('input',function(){
-	// 	if ($(this).val().length==2) {
-	// 		if (prev_length==1){
+	// 	if ($(this).val().length>=2) {
+	// 		if (prev_word.length<2){
 	// 			typing = true;	
-	// 			socket.emit('add_to_queue');
+	// 			socket.emit('add_to_queue',$(this).val());
 	// 		}
-	// 	} else if ($(this).val().length==1) {
-	// 		if (prev_length==2) {
+	// 	} else if ($(this).val().length<2) {
+	// 		if (prev_word.length>=2) {
 	// 			typing = false;
-	// 			socket.emit('remove_from_queue');
+	// 			socket.emit('remove_from_queue',prev_word);
+	// 			//UNLESS SUBMITTED
 	// 		}
 	// 	}
-	// 	prev_length = $(this).val().length;
+	// 	prev_word = $(this).val();
 	// });
-
 
 	//update the html
 	socket.on('state', function(state) {
-		//update words
+		//clear top and bottom row (besides queue)
 		$("#top-row").html("");
-		// $("#bottom-row").html("<div class = 'col-2 bg-secondary mr-3 pt-2' id='typing_queue'></div>"); //ELAN
+		//ELAN
+		// $("#bottom-row").html("<div class = 'col-2 bg-secondary mr-3 pt-2' id='typing_queue'></div>");
+		// for (name of queue) {
+		// 	$("#typing_queue").append(
+		// 		"<p class='msg'>" + name + "</p>");
+		// }
 		$("#bottom-row").html("");
-
 		// sort, most words first
 		let players = state["players"];
 		let sorted_players = [];
@@ -148,16 +161,13 @@ $(document).ready(function() {
 		for (letter of state["letter_bank"]) {  //redraw all letters in letter-bank
 			$("#letter-bank").append("<p class = 'letter m-2'>" + letter + "</p>");
 		}
-		//reoutline active word
-		if (active) {
-			$("#"+active).css("border", "2px solid white");
-			$("#"+active).css("border-radius","4px");
-		}
 		//check if focus changes
 		if (document.hasFocus() && state["focused_players"][id]==false) {
 			socket.emit('focus',true);
+			focus = true;
 		} else if (!document.hasFocus() && state["focused_players"][id]==true) {
 			socket.emit('focus',false);
+			focus = false;
 		}
 	});
 
@@ -206,8 +216,9 @@ $(document).ready(function() {
 	});
 
 
-	//ELAN queue
+	// // ELAN queue
 	// socket.on('queue_refresh',function(obj){
+	// 	queue = obj["queue"];
 	// 	$("#typing_queue").html("");
 	// 	for (name of obj["queue"]) {
 	// 		$("#typing_queue").append(

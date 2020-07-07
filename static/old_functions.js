@@ -234,3 +234,39 @@ function wait_until_free() {
   //     }
   //   }
   // });
+
+
+
+          //Method 2 for moving item to end of queue:
+        let index;
+        for (var i=0; i<typing_queue.length; i++) {
+          if (typing_queue[i][0]==socket.id) {
+            index = i;
+          }
+        }
+        //will have error here if not on queue but timer still going
+        typing_queue.push(typing_queue.splice(index,1)[0]);
+        socket.emit("alert","took too long to type, moved to end of queue");
+
+
+            //Method 2 for removing from queue
+        // let index;
+        // for (var i=0; i<typing_queue.length; i++) {
+        //   if (typing_queue[i][0]==socket.id) {
+        //     index = i;
+        //   }
+        // }
+        // clearInterval(typing_queue[index][1]);
+        // typing_queue.splice(index,1);
+        // emit_queue();
+
+
+//more old remove from queue function
+  for (const [id,timer,word_start] of typing_queue) {
+    if (id==socket_id && word_start==word) {
+      clearInterval(timer);
+    }
+  }
+  typing_queue = typing_queue.filter(function(item){
+    return item[0] !== socket_id;
+  });
